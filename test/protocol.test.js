@@ -9,6 +9,7 @@ import {
   hex,
   stateToText,
   mxwStatusToText,
+  formatQueryCount,
 } from '../js/protocol.js';
 import { qrMatrix } from '../js/qr.js';
 import { TEMPLATES, testCardSource } from '../js/templates.js';
@@ -70,5 +71,8 @@ assert.ok(mxwStatusToText(pSansFf.payload).includes('batterie 80%'), 'A1 sans fo
 
 const aaSansFooter = parsePacket(Uint8Array.from([0x22, 0x21, 0xaa, 0x00, 0x03, 0x00, 0x00, 0xc2, 0xc2, 0x00]));
 assert.equal(aaSansFooter.cmd, 0xaa, 'notification AA (print complete) recue sans footer');
+
+assert.equal(formatQueryCount(Uint8Array.from([0xff, 0xff])), 'indisponible (FF…)');
+assert.ok(formatQueryCount(Uint8Array.from([0x34, 0x12])).includes('LE16=4660'), 'A7 en LE16');
 
 console.log(`tous les tests passent (app v${APP_VERSION}, QR ${qr.getModuleCount()}x${qr.getModuleCount()} modules, ${TEMPLATES.length} templates + page de test)`);

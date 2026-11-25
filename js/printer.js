@@ -15,6 +15,7 @@ import {
   parsePacket,
   stateToText,
   mxwStatusToText,
+  formatQueryCount,
   hex,
 } from './protocol.js';
 
@@ -265,7 +266,15 @@ export class CatPrinter {
     if (this.isMxw) {
       let resp = await this._request(MXW.status, Uint8Array.from([0x00]), 2500);
       if (!resp) resp = await this._request(MXW.status, Uint8Array.from([0x00]), 2500);
-      return resp ? { text: mxwStatusToText(resp.payload) } : null;
+      const count = await this._request(MXW.queryCount, Uint8Array.from([0x00]), 2000);
+      if (!resp) return null;
+      let text = mxwStatusToText(resp.payload);
+      const countTxt = formatQueryCount(count ? count.payload : null);
+      if (countTxt) {
+        this.lastCount = count.payload;
+        text += ` — impressions (A7) : ${countTxt}`;
+      }
+      return { text };
     }
     const resp = await this._request(CAT.getState, Uint8Array.from([0x00]), timeoutMs);
     if (!resp) return null;

@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.7.2';
+export const APP_VERSION = '2.7.3';
 
 export const SERVICE_UUID = '0000ae30-0000-1000-8000-00805f9b34fb';
 export const CHAR_WRITE_UUID = '0000ae01-0000-1000-8000-00805f9b34fb';
@@ -123,6 +123,14 @@ export function mxwStatusToText(p) {
   if (p.length > 6 && p[6] !== 0) parts.push(`ERREUR : ${MXW_ERROR[p[7]] || `code ${p[7]}`}`);
   else parts.push('OK');
   return parts.join(', ');
+}
+
+export function formatQueryCount(payload) {
+  if (!payload || !payload.length) return null;
+  if (Array.from(payload).every((b) => b === 0xff)) return 'indisponible (FF…)';
+  const hexStr = Array.from(payload).map((b) => b.toString(16).padStart(2, '0')).join(' ');
+  const le16 = payload.length >= 2 ? payload[0] | (payload[1] << 8) : null;
+  return `0x${hexStr}${le16 !== null ? ` (LE16=${le16})` : ''}`;
 }
 
 export function hex(bytes) {
