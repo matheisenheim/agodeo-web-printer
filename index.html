@@ -102,7 +102,23 @@
   </section>
 
   <section class="panel">
-    <h2>3. Impression</h2>
+    <h2>3. Labo protocole (commandes brutes)</h2>
+    <div class="row">
+      <input id="labCmd" type="text" placeholder="cmd hex (ex. ae)" style="max-width:90px">
+      <input id="labPayload" type="text" placeholder="payload hex (ex. 00)">
+      <button id="btnLabSend">Envoyer</button>
+    </div>
+    <div class="row">
+      <button class="lab-quick" data-cmd="a7" data-payload="00">A7 compteur</button>
+      <button class="lab-quick" data-cmd="ab" data-payload="00">AB batterie</button>
+      <button class="lab-quick" data-cmd="a4" data-payload="20 00">A4 retract 32</button>
+      <button class="lab-quick" data-cmd="b1" data-payload="00">B1 version</button>
+    </div>
+    <p class="hint">Envoie une trame brute (header auto selon le protocole détecté) sur AE01. Les réponses arrivent dans le journal BLE. Ne rien envoyer pendant une impression ; si l'imprimante bloque, éteins-la/rallume-la.</p>
+  </section>
+
+  <section class="panel">
+    <h2>4. Impression</h2>
     <button id="btnPrint" disabled>Imprimer</button>
     <div id="printStatus" class="status"></div>
     <h3>Journal BLE</h3>

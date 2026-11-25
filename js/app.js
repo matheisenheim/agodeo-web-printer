@@ -307,6 +307,32 @@ $('btnCapture').addEventListener('click', async () => {
 
 window.addEventListener('beforeunload', () => stopCamera($('cam')));
 
+function parseHex(str) {
+  const clean = String(str || '').trim().replace(/0x/gi, '').replace(/\s+/g, '');
+  if (clean.length % 2 !== 0) throw new Error('hex invalide (nombre impair de chiffres)');
+  const out = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.substr(i * 2, 2), 16);
+  return out;
+}
+
+async function labSend(cmdHex, payloadHex) {
+  try {
+    const cmd = parseHex(cmdHex)[0];
+    const payload = parseHex(payloadHex);
+    if (cmd === undefined || Number.isNaN(cmd)) throw new Error('commande hex invalide');
+    await printer.send(cmd, payload);
+    $('printStatus').textContent = `envoyé : cmd=0x${cmd.toString(16)} payload=${payloadHex || '(vide)'}`;
+  } catch (e) {
+    $('printStatus').textContent = `Labo : ${e.message}`;
+  }
+}
+
+$('btnLabSend').addEventListener('click', () => labSend($('labCmd').value, $('labPayload').value));
+
+document.querySelectorAll('.lab-quick').forEach((b) => {
+  b.addEventListener('click', () => labSend(b.dataset.cmd, b.dataset.payload));
+});
+
 $('textInput').addEventListener('input', refreshPreview);
 $('fontSize').addEventListener('input', refreshPreview);
 $('fontFamily').addEventListener('change', refreshPreview);

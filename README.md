@@ -82,6 +82,16 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 3. **« État de l'imprimante »** : pour un MXW01 affiche état + batterie % + température de la tête + erreur éventuelle (pas de papier, surchauffe…).
 4. Onglet **Texte**, **Image**, **QR code** ou **Modèles**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large).
 
+### Labo protocole (reverse engineering)
+
+Panneau **« Labo protocole »** : envoie une trame brute (`cmd` + `payload` en hex, ex. `ae` / `00`) sur `AE01` avec le bon header (auto selon le protocole détecté) ; les réponses de l'imprimante arrivent dans le journal BLE. Boutons rapides : `A7` compteur, `AB` batterie, `A4` retract, `B1` version.
+
+Pour découvrir `AE`, `B2`, `B3` (inconnues), 3 pistes :
+
+1. **Labo de l'app** : tester `ae 00`, `b2 00`, `b3 00` et variantes de payload, noter les réponses (journal BLE). Ne rien envoyer pendant une impression ; si blocage → éteindre/rallumer l'imprimante.
+2. **Décompilation de l'app officielle FunPrint**, extraite de TON téléphone : `adb shell pm path com.fun.mxw` puis `adb pull <chemin>` → ouvrir l'APK avec **jadx** → chercher `BluetoothOrder`, `0xAE`, `0xB2`, `0xB3` dans le code (la classe `BluetoothOrder.java` contient déjà la construction des paquets connus).
+3. **Snoop HCI** : Options développeur Android → « Journal d'analyse Bluetooth HCI » → utiliser FunPrint normalement → `adb pull /sdcard/Android/data/com.android.bluetooth/files/btsnoop_hci.log` → ouvrir dans **Wireshark** (filtre ATT, colonne Write sur la caractéristique AE01).
+
 ### Photobooth
 
 Onglet **Photobooth** : aperçu webcam en direct (`getUserMedia`, exige HTTPS/localhost + autorisation caméra), bouton **Capturer** qui fige la photo dans l'aperçu (384 px de large), puis **Imprimer**. Option « cadre photobooth + date » : superpose un double filet, un texte (« Souriez ! ») et la date du jour au-dessus de la photo. Conseillé : mode **16 niveaux de gris HD** pour les photos. Un seul appareil BLE connecté à la fois (fermer FunPrint ailleurs).
