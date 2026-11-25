@@ -212,7 +212,7 @@ Affiche la version (`v2.0.0` en haut de page + dans le journal), branche les bou
 **Trame** : `<header 2 octets> <cmd> <dir=00> <lenLo> <lenHi> <payload> <CRC8> FF`
 - `len` = longueur du payload, little-endian 16 bits
 - `CRC8` = CRC-8 poly 0x07, init 0, calculé **sur le payload seul**
-- `FF` = terminateur
+- `FF` = terminateur — **sur les réponses du MXW01, le `FF` final est absent** (capture réelle : les notifications s'arrêtent après le CRC) ; le parser de l'app se base donc sur la longueur (`6 + len + 1`) et accepte le `FF` optionnel
 
 **Image** : 384 px de large = 48 octets par ligne, **LSB first** (bit 0 = pixel de gauche), **1 = noir**, 0 = blanc. Lignes contiguës, sans en-tête par ligne.
 
