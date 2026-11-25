@@ -1,11 +1,10 @@
 import { CatPrinter } from './printer.js';
-import { renderTextToLines, renderImageFileToLines, drawPreview } from './image.js';
+import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { APP_VERSION } from './protocol.js';
 
 const $ = (id) => document.getElementById(id);
 const printer = new CatPrinter();
-let currentLines = [];
-let imageFile = null;
+let currentSource = null;
 
 $('appVersion').textContent = `v${APP_VERSION}`;
 
@@ -28,22 +27,26 @@ printer.onDisconnect = () => {
   $('btnPrint').disabled = true;
 };
 
-function refreshPreview() {
-  if ($('tabText').classList.contains('active')) {
-    currentLines = renderTextToLines($('textInput').value, {
-      fontSize: Number($('fontSize').value),
-      fontFamily: $('fontFamily').value,
-    });
-  }
-  drawPreview($('preview'), currentLines);
-  $('btnPrint').disabled = !printer.connected || currentLines.length === 0;
+function currentMode() {
+  return Number($('printMode').value);
 }
 
-async function refreshImage() {
-  if (!imageFile) return;
-  currentLines = await renderImageFileToLines(imageFile, { dither: $('dither').checked });
-  drawPreview($('preview'), currentLines);
-  $('btnPrint').disabled = !printer.connected || currentLines.length === 0;
+function currentDither() {
+  return currentSource && currentSource.kind === 'image' ? $('dither').checked : false;
+}
+
+function refreshPreview() {
+  if ($('tabText').classList.contains('active')) {
+    currentSource = textSource($('textInput').value, Number($('fontSize').value), $('fontFamily').value);
+  }
+  if (!currentSource) {
+    drawPreview($('preview'), []);
+    $('btnPrint').disabled = true;
+    return;
+  }
+  const lines = renderSourceToLines(currentSource, { mode: 0, dither: currentDither() });
+  drawPreview($('preview'), lines);
+  $('btnPrint').disabled = !printer.connected || currentSource === null;
 }
 
 $('btnConnect').addEventListener('click', async () => {
@@ -68,7 +71,7 @@ $('btnDisconnect').addEventListener('click', () => printer.disconnect());
 $('btnState').addEventListener('click', async () => {
   try {
     const st = await printer.getState();
-    $('printerState').textContent = st ? `État : ${st.text}` : 'Pas de réponse d\'état (notifications AE02) — essaie quand même « Imprimer », l\'état est informatif.';
+    $('printerState').textContent = st ? `État : ${st.text}` : 'Pas de réponse d\'état — essaie quand même « Imprimer », l\'état est informatif.';
   } catch (e) {
     $('printerState').textContent = `Erreur : ${e.message}`;
   }
@@ -96,7 +99,7 @@ $('tabImage').addEventListener('click', () => {
   $('tabText').classList.remove('active');
   $('paneImage').hidden = false;
   $('paneText').hidden = true;
-  refreshImage();
+  refreshPreview();
 });
 
 $('textInput').addEventListener('input', refreshPreview);
@@ -104,19 +107,24 @@ $('fontSize').addEventListener('input', refreshPreview);
 $('fontFamily').addEventListener('change', refreshPreview);
 
 $('imageInput').addEventListener('change', async (e) => {
-  imageFile = e.target.files[0] || null;
-  await refreshImage();
+  const file = e.target.files[0];
+  if (file) currentSource = await imageSource(file);
+  refreshPreview();
 });
 
-$('dither').addEventListener('change', refreshImage);
+$('dither').addEventListener('change', refreshPreview);
+$('printMode').addEventListener('change', refreshPreview);
 
 $('btnPrint').addEventListener('click', async () => {
   try {
     $('btnPrint').disabled = true;
-    $('printStatus').textContent = `Impression de ${currentLines.length} lignes…`;
-    const n = await printer.printLines(currentLines, {
+    const mode = currentMode();
+    const lines = renderSourceToLines(currentSource, { mode, dither: currentDither() });
+    $('printStatus').textContent = `Impression de ${lines.length} lignes (mode ${mode === 2 ? '4 bits / 16 gris — HD' : '1 bit mono'})…`;
+    const n = await printer.printLines(lines, {
       energy: Number($('energy').value),
       feed: Number($('feedSteps').value) || 50,
+      mode,
     });
     $('printStatus').textContent = `Terminé : ${n} lignes envoyées.`;
   } catch (e) {

@@ -1,56 +1,61 @@
 import { PRINT_WIDTH, LINE_BYTES } from './protocol.js';
 
-export function renderTextToLines(text, opts = {}) {
-  const fontSize = opts.fontSize ?? 24;
-  const fontFamily = opts.fontFamily ?? 'sans-serif';
-  const padding = opts.padding ?? 8;
-  const meas = document.createElement('canvas').getContext('2d');
-  meas.font = `${fontSize}px ${fontFamily}`;
-  const maxW = PRINT_WIDTH - padding * 2;
-  const words = String(text).split(/\s+/).filter(Boolean);
-  const wrapped = [];
-  let cur = '';
-  for (const w of words) {
-    const t = cur ? `${cur} ${w}` : w;
-    if (meas.measureText(t).width > maxW && cur) {
-      wrapped.push(cur);
-      cur = w;
-    } else {
-      cur = t;
-    }
-  }
-  if (cur) wrapped.push(cur);
-  if (!wrapped.length) wrapped.push('');
-  const lineH = Math.ceil(fontSize * 1.25);
-  const canvas = document.createElement('canvas');
-  canvas.width = PRINT_WIDTH;
-  canvas.height = Math.max(1, wrapped.length * lineH + padding * 2);
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#000000';
-  ctx.font = `${fontSize}px ${fontFamily}`;
-  ctx.textBaseline = 'top';
-  wrapped.forEach((ln, i) => ctx.fillText(ln, padding, padding + i * lineH));
-  return bitmapFromCanvas(canvas, false);
+export const LINE_BYTES_4BPP = PRINT_WIDTH / 2;
+
+export function textSource(text, fontSize, fontFamily) {
+  return { kind: 'text', text, fontSize, fontFamily };
 }
 
-export async function renderImageFileToLines(file, opts = {}) {
-  const dither = opts.dither ?? true;
+export async function imageSource(file) {
   const bmp = await createImageBitmap(file);
-  const h = Math.max(1, Math.round((bmp.height * PRINT_WIDTH) / bmp.width));
+  return { kind: 'image', bmp };
+}
+
+export function sourceToCanvas(source) {
   const canvas = document.createElement('canvas');
   canvas.width = PRINT_WIDTH;
-  canvas.height = h;
+  if (source.kind === 'text') {
+    const fontSize = source.fontSize ?? 24;
+    const fontFamily = source.fontFamily ?? 'sans-serif';
+    const padding = 8;
+    const meas = document.createElement('canvas').getContext('2d');
+    meas.font = `${fontSize}px ${fontFamily}`;
+    const maxW = PRINT_WIDTH - padding * 2;
+    const words = String(source.text).split(/\s+/).filter(Boolean);
+    const wrapped = [];
+    let cur = '';
+    for (const w of words) {
+      const t = cur ? `${cur} ${w}` : w;
+      if (meas.measureText(t).width > maxW && cur) {
+        wrapped.push(cur);
+        cur = w;
+      } else {
+        cur = t;
+      }
+    }
+    if (cur) wrapped.push(cur);
+    if (!wrapped.length) wrapped.push('');
+    const lineH = Math.ceil(fontSize * 1.25);
+    canvas.height = Math.max(1, wrapped.length * lineH + padding * 2);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#000000';
+    ctx.font = `${fontSize}px ${fontFamily}`;
+    ctx.textBaseline = 'top';
+    wrapped.forEach((ln, i) => ctx.fillText(ln, padding, padding + i * lineH));
+    return canvas;
+  }
+  const bmp = source.bmp;
+  canvas.height = Math.max(1, Math.round((bmp.height * PRINT_WIDTH) / bmp.width));
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(bmp, 0, 0, PRINT_WIDTH, h);
-  bmp.close();
-  return bitmapFromCanvas(canvas, dither);
+  ctx.drawImage(bmp, 0, 0, PRINT_WIDTH, canvas.height);
+  return canvas;
 }
 
-export function bitmapFromCanvas(canvas, dither) {
+export function bitmapFromCanvas(canvas, dither, mode) {
   const { width, height } = canvas;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const img = ctx.getImageData(0, 0, width, height).data;
@@ -59,8 +64,20 @@ export function bitmapFromCanvas(canvas, dither) {
     const o = i * 4;
     gray[i] = 0.299 * img[o] + 0.587 * img[o + 1] + 0.114 * img[o + 2];
   }
-  if (dither) floydSteinberg(gray, width, height);
   const lines = [];
+  if (mode === 2) {
+    for (let y = 0; y < height; y++) {
+      const line = new Uint8Array(LINE_BYTES_4BPP);
+      for (let x = 0; x < width; x++) {
+        const v = 15 - Math.round((gray[y * width + x] / 255) * 15);
+        if (x % 2 === 0) line[x >> 1] |= v & 0x0f;
+        else line[x >> 1] |= (v & 0x0f) << 4;
+      }
+      lines.push(line);
+    }
+    return lines;
+  }
+  if (dither) floydSteinberg(gray, width, height);
   for (let y = 0; y < height; y++) {
     const line = new Uint8Array(LINE_BYTES);
     for (let x = 0; x < width; x++) {
@@ -69,6 +86,12 @@ export function bitmapFromCanvas(canvas, dither) {
     lines.push(line);
   }
   return lines;
+}
+
+export function renderSourceToLines(source, opts = {}) {
+  const mode = opts.mode ?? 0;
+  const dither = opts.dither ?? true;
+  return bitmapFromCanvas(sourceToCanvas(source), dither, mode);
 }
 
 function floydSteinberg(gray, w, h) {
@@ -96,7 +119,7 @@ export function drawPreview(canvas, lines) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#000000';
   lines.forEach((line, y) => {
-    for (let b = 0; b < line.length; b++) {
+    for (let b = 0; b < line.length && b * 8 < canvas.width; b++) {
       for (let bit = 0; bit < 8; bit++) {
         if (line[b] & (1 << bit)) ctx.fillRect(b * 8 + bit, y, 1, 1);
       }

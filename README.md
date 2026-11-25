@@ -66,7 +66,16 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 1. Allumer l'imprimante, charger un rouleau 57 mm, fermer FunPrint sur le téléphone.
 2. Cliquer **« Connecter l'imprimante »** (laisser le préfixe vide pour tout lister, ou taper `MXW01`), choisir l'imprimante dans le sélecteur du navigateur.
 3. **« État de l'imprimante »** : pour un MXW01 affiche état + batterie % + température de la tête + erreur éventuelle (pas de papier, surchauffe…).
-4. Onglet **Texte** ou **Image**, régler la **densité** (curseur énergie). L'aperçu montre exactement ce qui sera imprimé (384 px de large).
+4. Onglet **Texte** ou **Image**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large).
+
+### Paramètres réglables
+
+| Paramètre | Réglable ? | Commentaire |
+|---|---|---|
+| **DPI** | ❌ non | fixe à **203 dpi = 384 points sur 57 mm** — c'est la tête d'impression (hardware) |
+| Densité / intensité | ✅ oui | curseur « énergie » → commande `A2` (0–100, défaut ~93) sur MXW01, `AF` sur cat classique |
+| Mode couleur | ✅ oui (MXW01) | `A9` mode `0` = 1 bit/px (48 octets/ligne, rapide) ou mode `2` = 4 bits/px, 16 niveaux de gris (192 octets/ligne, « HD », plus lent) — c'est l'option « HD » de l'app FunPrint |
+| Avance du papier | ✅ oui | nombre de lignes après impression (`A3` MXW01 / `A1` cat) |
 5. **« Imprimer »** : envoie la séquence complète et attend la fin d'impression (notification `AA` sur MXW01).
 6. **« Avancer le papier »** éjecte l'étiquette (nombre de lignes réglable).
 
@@ -146,7 +155,7 @@ Affiche la version (`v2.0.0` en haut de page + dans le journal), branche les bou
 | `A2` | intensité `00`–`64` (0x5D = 93 conseillé) | densité d'impression |
 | `A3` | lignes LE16 | avancer/éjecter le papier |
 | `A4` | lignes LE16 | rentrer le papier |
-| `A9` | `height LE16, 0x30, mode` | demande d'impression (hauteur en lignes, 48 octets/ligne, mode 0 = 1 bit/px) → attendre l'ack `A9` (payload[0] = 0x00 = OK) |
+| `A9` | `height LE16, bytesParLigne, mode` | demande d'impression : hauteur en lignes, octets par ligne (`0x30`=48 en 1 bit, `0xC0`=192 en 4 bits), mode (`0` = 1 bit/px, `1` = mono moins d'avance, `2` = 4 bits/px 16 gris) → attendre l'ack `A9` (payload[0] = 0x00 = OK) |
 | `AD` | `00` | fin des données image (flush) |
 | `AA` | — | **notification** : impression physique terminée |
 | `AB` | `00` | niveau de batterie → réponse 1 octet (0–100) |
@@ -159,8 +168,8 @@ Affiche la version (`v2.0.0` en haut de page + dans le journal), branche les bou
 **Séquence d'impression MXW01** (implémentée dans `_printMxw`) :
 
 ```
-A1 00 (statut) → A2 <intensité> → A9 <height LE16> 30 00 → attendre ack A9
-→ image (48 octets/ligne) sur AE03, par morceaux de 20 octets, 12 ms d'écart
+A1 00 (statut) → A2 <intensité> → A9 <height LE16> <bytesParLigne> <mode> → attendre ack A9
+→ image (48 octets/ligne en mode 0, 192 en mode 2) sur AE03, par morceaux de 20 octets, 12 ms d'écart
 → AD 00 → attendre AA (60 s max) → A3 <feed LE16>
 ```
 

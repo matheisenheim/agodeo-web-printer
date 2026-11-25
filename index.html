@@ -53,7 +53,14 @@
     </div>
     <div class="row">
       <label>Énergie / densité <input id="energy" type="range" min="16384" max="65535" value="49152"></label>
+      <label>Mode
+        <select id="printMode">
+          <option value="0">Mono 1 bit (rapide)</option>
+          <option value="2">16 niveaux de gris 4 bits — HD (plus lent, photos)</option>
+        </select>
+      </label>
     </div>
+    <p class="hint">DPI : fixe à 203 dpi (384 points sur 57 mm) — non modifiable, c'est la tête d'impression.</p>
     <h3>Aperçu (384 px de large)</h3>
     <canvas id="preview" width="384"></canvas>
   </section>
