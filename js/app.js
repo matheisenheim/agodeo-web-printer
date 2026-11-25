@@ -418,15 +418,22 @@ function checkEnvironment() {
     $('btnConnect').disabled = true;
     return;
   }
-  navigator.bluetooth.getAvailability().then((ok) => {
-    if (!ok) $('connStatus').textContent = 'Bluetooth éteint ou indisponible sur cet appareil : active-le, puis recharge la page.';
-  });
+  navigator.bluetooth.getAvailability()
+    .then((ok) => {
+      if (!ok) $('connStatus').textContent = 'Bluetooth éteint ou indisponible sur cet appareil : active-le, puis recharge la page.';
+    })
+    .catch(() => {});
   showReconnectButton();
   buildTemplateUI();
   refreshPreview();
 }
 
+window.addEventListener('error', (e) => {
+  $('connStatus').textContent = `Erreur JS : ${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`;
+});
+
 checkEnvironment();
+printer.onLog('app prête — si ce message manque, le JS n\'a pas charge correctement (vide le cache / Ctrl+F5)');
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});

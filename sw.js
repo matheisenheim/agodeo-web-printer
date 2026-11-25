@@ -1,4 +1,4 @@
-const CACHE = 'agodeo-web-printer-v2.7.0';
+const CACHE = 'agodeo-web-printer-v2.7.1';
 const ASSETS = [
   './',
   'index.html',
@@ -30,5 +30,19 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
+  const path = new URL(e.request.url).pathname;
+  const isCode = path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.webmanifest') || path.includes('/js/') || path.includes('/vendor/');
+  if (isCode) {
+    e.respondWith(
+      fetch(e.request)
+        .then((r) => {
+          const copy = r.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+          return r;
+        })
+        .catch(() => caches.match(e.request))
+    );
+  } else {
+    e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
+  }
 });
