@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agodeo Web Printer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Mini imprimante Agodeo / FunPrint</h1>
+  <p class="hint">Web Bluetooth : Chrome ou Edge uniquement, en HTTPS ou sur localhost. Non disponible sur Safari / iOS / Firefox.</p>
+</header>
+<main>
+  <section class="panel">
+    <h2>1. Connexion</h2>
+    <div class="row">
+      <input id="namePrefix" type="text" placeholder="Préfixe du nom BLE (ex. MXW01), vide = tous les appareils">
+      <button id="btnConnect">Connecter l'imprimante</button>
+      <button id="btnDisconnect" disabled>Déconnecter</button>
+    </div>
+    <div id="connStatus" class="status">Non connecté</div>
+    <div class="row">
+      <button id="btnState">État de l'imprimante</button>
+      <button id="btnFeed">Avancer le papier</button>
+      <label>pas <input id="feedSteps" type="number" value="50" min="1" max="255"></label>
+    </div>
+    <div id="printerState" class="status"></div>
+  </section>
+
+  <section class="panel">
+    <h2>2. Contenu à imprimer</h2>
+    <div class="tabs">
+      <button id="tabText" class="tab active">Texte</button>
+      <button id="tabImage" class="tab">Image</button>
+    </div>
+    <div id="paneText">
+      <textarea id="textInput" rows="4">Bonjour ! Ceci est un test d'impression.</textarea>
+      <div class="row">
+        <label>Taille <input id="fontSize" type="range" min="12" max="64" value="24"></label>
+        <label>Police
+          <select id="fontFamily">
+            <option value="sans-serif">Sans-serif</option>
+            <option value="serif">Serif</option>
+            <option value="monospace">Monospace</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div id="paneImage" hidden>
+      <input id="imageInput" type="file" accept="image/*">
+      <label><input id="dither" type="checkbox" checked> Dithering Floyd-Steinberg (photos)</label>
+    </div>
+    <div class="row">
+      <label>Énergie / densité <input id="energy" type="range" min="16384" max="65535" value="49152"></label>
+    </div>
+    <h3>Aperçu (384 px de large)</h3>
+    <canvas id="preview" width="384"></canvas>
+  </section>
+
+  <section class="panel">
+    <h2>3. Impression</h2>
+    <button id="btnPrint" disabled>Imprimer</button>
+    <div id="printStatus" class="status"></div>
+    <h3>Journal BLE</h3>
+    <pre id="log"></pre>
+  </section>
+</main>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
