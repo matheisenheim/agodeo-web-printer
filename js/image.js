@@ -1,5 +1,6 @@
-import { PRINT_WIDTH, LINE_BYTES } from './protocol.js';
+import { PRINT_WIDTH, LINE_BYTES, APP_VERSION } from './protocol.js';
 import { qrMatrix } from './qr.js';
+import { renderTestCard } from './templates.js';
 
 export const LINE_BYTES_4BPP = PRINT_WIDTH / 2;
 
@@ -17,6 +18,9 @@ export function sourceToCanvas(source) {
   canvas.width = PRINT_WIDTH;
   if (source.kind === 'template') {
     return source.tpl.render(source.values || {}, PRINT_WIDTH);
+  }
+  if (source.kind === 'testcard') {
+    return renderTestCard(PRINT_WIDTH, APP_VERSION);
   }
   if (source.kind === 'photobooth') {
     const photo = sourceToCanvas({ kind: 'image', bmp: source.bmp });

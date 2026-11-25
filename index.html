@@ -76,7 +76,10 @@
       <p class="hint">Cadres vectoriels thème thé (bas-relief, médaillon, branche). En mode « 16 niveaux de gris HD », le relief sort en dégradés réels.</p>
     </div>
     <div id="panePhotobooth" hidden>
-      <video id="cam" autoplay playsinline muted style="width:100%;max-width:384px;background:#000;border:1px solid #ccc"></video>
+      <div id="camWrap" style="position:relative;max-width:384px">
+        <video id="cam" autoplay playsinline muted class="mirrored" style="width:100%;background:#000;border:1px solid #ccc"></video>
+        <div id="countdown" hidden>3</div>
+      </div>
       <div class="row">
         <button id="btnCam">Démarrer la caméra</button>
         <button id="btnCapture" disabled>Capturer</button>
@@ -84,6 +87,10 @@
       <div class="row">
         <label><input id="pbFrame" type="checkbox" checked> Cadre photobooth + date</label>
         <input id="pbLabel" type="text" value="Souriez !" style="max-width:160px">
+      </div>
+      <div class="row">
+        <label><input id="pbMirror" type="checkbox" checked> Miroir (selfie)</label>
+        <label><input id="pbTimer" type="checkbox" checked> Minuteur 3-2-1</label>
       </div>
       <p class="hint">La caméra exige HTTPS ou localhost (comme Web Bluetooth). « Capturer » fige la photo dans l'aperçu, puis « Imprimer » la sort. Conseillé : mode 16 niveaux de gris HD.</p>
     </div>
@@ -119,7 +126,10 @@
 
   <section class="panel">
     <h2>4. Impression</h2>
-    <button id="btnPrint" disabled>Imprimer</button>
+    <div class="row">
+      <button id="btnPrint" disabled>Imprimer</button>
+      <button id="btnTestCard">Page de test</button>
+    </div>
     <div id="printStatus" class="status"></div>
     <h3>Journal BLE</h3>
     <pre id="log"></pre>

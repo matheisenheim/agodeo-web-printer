@@ -1,6 +1,6 @@
 import { CatPrinter } from './printer.js';
 import { textSource, imageSource, qrSource, renderSourceToLines, drawPreview } from './image.js';
-import { TEMPLATES, templateSource } from './templates.js';
+import { TEMPLATES, templateSource, testCardSource } from './templates.js';
 import { startCamera, stopCamera, cameraRunning, captureFrame } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 
@@ -191,7 +191,8 @@ $('btnInfo').addEventListener('click', async () => {
       return;
     }
     const typeTxt = info.type === null ? '?' : `0x${info.type.toString(16)} (${info.type})`;
-    $('printerState').textContent = `Firmware : ${info.version || '?'} — type d'impression (B0) : ${typeTxt}`;
+    const countTxt = info.count ? `0x${info.count.map((b) => b.toString(16).padStart(2, '0')).join(' ')}` : '?';
+    $('printerState').textContent = `Firmware : ${info.version || '?'} — type (B0) : ${typeTxt} — impressions (A7) : ${countTxt}`;
   } catch (e) {
     $('printerState').textContent = `Erreur : ${e.message}`;
   }
@@ -274,6 +275,33 @@ $('tabQr').addEventListener('click', () => switchTab('Qr'));
 $('tabTemplate').addEventListener('click', () => switchTab('Template'));
 $('tabPhotobooth').addEventListener('click', () => switchTab('Photobooth'));
 
+function applyMirror() {
+  $('cam').classList.toggle('mirrored', $('pbMirror').checked);
+}
+
+$('pbMirror').addEventListener('change', applyMirror);
+
+function countdown(n) {
+  return new Promise((resolve) => {
+    const el = $('countdown');
+    let i = n;
+    el.hidden = false;
+    el.textContent = String(i);
+    $('btnCapture').disabled = true;
+    const t = setInterval(() => {
+      i -= 1;
+      if (i <= 0) {
+        clearInterval(t);
+        el.hidden = true;
+        $('btnCapture').disabled = false;
+        resolve();
+      } else {
+        el.textContent = String(i);
+      }
+    }, 1000);
+  });
+}
+
 $('btnCam').addEventListener('click', async () => {
   try {
     if (cameraRunning()) {
@@ -284,6 +312,7 @@ $('btnCam').addEventListener('click', async () => {
     }
     $('connStatus').textContent = 'Demande d\'accès à la caméra… (autorise-la dans le navigateur)';
     await startCamera($('cam'));
+    applyMirror();
     $('btnCam').textContent = 'Arrêter la caméra';
     $('btnCapture').disabled = false;
     $('connStatus').textContent = 'Caméra active.';
@@ -294,7 +323,8 @@ $('btnCam').addEventListener('click', async () => {
 
 $('btnCapture').addEventListener('click', async () => {
   try {
-    const bmp = await captureFrame($('cam'));
+    if ($('pbTimer').checked) await countdown(3);
+    const bmp = await captureFrame($('cam'), undefined, $('pbMirror').checked);
     currentSource = $('pbFrame').checked
       ? { kind: 'photobooth', bmp, label: $('pbLabel').value }
       : { kind: 'image', bmp };
@@ -302,6 +332,17 @@ $('btnCapture').addEventListener('click', async () => {
     $('printStatus').textContent = 'Photo capturée — « Imprimer » pour la sortir.';
   } catch (e) {
     $('printStatus').textContent = `Erreur capture : ${e.message}`;
+  }
+});
+
+$('btnTestCard').addEventListener('click', async () => {
+  currentSource = testCardSource();
+  refreshPreview();
+  if (printer.connected) {
+    $('printStatus').textContent = 'Impression de la page de test…';
+    $('btnPrint').click();
+  } else {
+    $('printStatus').textContent = 'Page de test prête dans l\'aperçu — connecte l\'imprimante puis « Imprimer ».';
   }
 });
 

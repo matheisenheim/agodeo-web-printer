@@ -277,3 +277,70 @@ export const TEMPLATES = [
 export function templateSource(tpl, values) {
   return { kind: 'template', tpl, values };
 }
+
+export function testCardSource() {
+  return { kind: 'testcard' };
+}
+
+export function renderTestCard(w, version) {
+  const h = 560;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(8, 8, w - 16, h - 16);
+  ctx.lineWidth = 1;
+  ctx.strokeRect(14, 14, w - 28, h - 28);
+  ctx.fillStyle = INK;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.font = 'bold 30px sans-serif';
+  ctx.fillText('PAGE DE TEST', w / 2, 24);
+  ctx.font = '15px sans-serif';
+  ctx.fillText(`agodeo-web-printer v${version} — ${new Date().toLocaleString('fr-FR')}`, w / 2, 62);
+  const sq = 24;
+  for (let y = 0; y < 4; y++) {
+    for (let x = 0; x < 8; x++) {
+      if ((x + y) % 2 === 0) {
+        ctx.fillRect(24 + x * sq, 96 + y * sq, sq, sq);
+      }
+    }
+  }
+  ctx.strokeRect(24, 96, 8 * sq, 4 * sq);
+  for (let i = 0; i < 16; i++) {
+    const g = Math.round((i / 15) * 255);
+    ctx.fillStyle = `rgb(${g},${g},${g})`;
+    ctx.fillRect(24 + i * 20, 210, 20, 30);
+  }
+  ctx.strokeStyle = INK;
+  ctx.strokeRect(24, 210, 320, 30);
+  ctx.fillStyle = INK;
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText('Niveaux de gris 0-15 (utile en mode HD)', w / 2, 248);
+  ctx.font = '13px monospace';
+  for (let i = 0; i < 8; i++) {
+    ctx.fillText(`ligne de texte ${i + 1} — 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ`, 24, 292 + i * 18);
+  }
+  const qr = qrMatrix('https://github.com/matheisenheim/agodeo-web-printer');
+  const count = qr.getModuleCount();
+  const cell = 3;
+  const side = (count + 8) * cell;
+  const qx = (w - side) / 2;
+  const qy = h - side - 24;
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(qx, qy, side, side);
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(qx, qy, side, side);
+  ctx.fillStyle = INK;
+  for (let r = 0; r < count; r++) {
+    for (let c = 0; c < count; c++) {
+      if (qr.isDark(r, c)) ctx.fillRect(qx + (c + 4) * cell, qy + (r + 4) * cell, cell, cell);
+    }
+  }
+  return canvas;
+}

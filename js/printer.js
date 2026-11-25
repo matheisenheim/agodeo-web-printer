@@ -287,9 +287,11 @@ export class CatPrinter {
     if (!this.isMxw) return null;
     const v = await this._request(MXW.version, Uint8Array.from([0x00]), timeoutMs);
     const t = await this._request(MXW.printType, Uint8Array.from([0x00]), timeoutMs);
+    const c = await this._request(MXW.queryCount, Uint8Array.from([0x00]), timeoutMs);
     return {
       version: v && v.payload.length ? new TextDecoder().decode(v.payload).replace(/\0+$/, '') : null,
       type: t && t.payload.length ? t.payload[0] : null,
+      count: c && c.payload.length ? Array.from(c.payload) : null,
     };
   }
 

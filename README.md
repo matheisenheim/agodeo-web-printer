@@ -94,7 +94,11 @@ Pour découvrir `AE`, `B2`, `B3` (inconnues), 3 pistes :
 
 ### Photobooth
 
-Onglet **Photobooth** : aperçu webcam en direct (`getUserMedia`, exige HTTPS/localhost + autorisation caméra), bouton **Capturer** qui fige la photo dans l'aperçu (384 px de large), puis **Imprimer**. Option « cadre photobooth + date » : superpose un double filet, un texte (« Souriez ! ») et la date du jour au-dessus de la photo. Conseillé : mode **16 niveaux de gris HD** pour les photos. Un seul appareil BLE connecté à la fois (fermer FunPrint ailleurs).
+Onglet **Photobooth** : aperçu webcam en direct (`getUserMedia`, exige HTTPS/localhost + autorisation caméra), bouton **Capturer** qui fige la photo dans l'aperçu (384 px de large), puis **Imprimer**. Options : « cadre photobooth + date » (double filet + texte + date au-dessus de la photo), **miroir selfie** (aperçu ET photo retournées), **minuteur 3-2-1** avant la capture. Le mode **16 niveaux de gris HD** est sélectionné automatiquement dans cet onglet. Un seul appareil BLE connecté à la fois (fermer FunPrint ailleurs).
+
+**Page de test** : bouton « Page de test » (panneau Impression) → génère une mire (titre + date + version, damier d'alignement, barre des 16 niveaux de gris, 8 lignes de texte, QR du projet) et l'imprime directement si l'imprimante est connectée, sinon la met dans l'aperçu.
+
+**Infos appareil** (bouton « Infos appareil B0/B1 ») : affiche le **firmware (B1)**, le **type d'impression (B0)** et le **compteur d'impressions interne (A7)** en hex.
 
 ### Modèles d'étiquettes (thème thé)
 
