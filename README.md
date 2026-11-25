@@ -41,6 +41,18 @@ python3 -m http.server 8000     # Linux / macOS
 
 Puis ouvrir [http://localhost:8000](http://localhost:8000) dans **Chrome ou Edge**.
 
+### Mettre à jour le code (nouvelles versions)
+
+Depuis le dossier du projet, sans toucher à tes réglages (ne modifie pas les fichiers toi-même) :
+
+```bash
+git fetch origin
+git checkout vibe/agodeo-web-printer-7ead01   # seulement la première fois
+git pull origin vibe/agodeo-web-printer-7ead01
+```
+
+Puis recharge la page dans le navigateur avec **Ctrl+F5** (rechargement forcé, sinon le cache garde l'ancien JS) et vérifie le numéro de version affiché en haut de la page.
+
 Alternatives pour servir les fichiers en local :
 
 ```bash
