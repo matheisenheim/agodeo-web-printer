@@ -19,7 +19,7 @@ L'application permet de se connecter à l'imprimante depuis le navigateur, de li
 
 ### Contexte sécurisé obligatoire
 
-Web Bluetooth n'est disponible qu'en **HTTPS** ou sur **`http://localhost`**. En local, `python3 -m http.server` suffit donc. En production (hébergement), il faut un hébergement en HTTPS (GitHub Pages, Netlify, Vercel…).
+Web Bluetooth n'est disponible qu'en **HTTPS** ou sur **`http://localhost`**. En local, un simple serveur statique suffit : `python -m http.server` (Windows) ou `python3 -m http.server` (Linux/macOS). En production (hébergement), il faut un hébergement en HTTPS (GitHub Pages, Netlify, Vercel…).
 
 ### Matériel
 
@@ -35,7 +35,8 @@ Aucune dépendance à installer : ce sont de simples fichiers statiques (HTML/CS
 ```bash
 git clone https://github.com/matheisenheim/agodeo-web-printer.git
 cd agodeo-web-printer
-python3 -m http.server 8000
+python -m http.server 8000      # Windows
+python3 -m http.server 8000     # Linux / macOS
 ```
 
 Puis ouvrir [http://localhost:8000](http://localhost:8000) dans **Chrome ou Edge**.
