@@ -47,4 +47,14 @@ for (const t of TEMPLATES) {
 
 assert.equal(testCardSource().kind, 'testcard');
 
+const a1Reelle = parsePacket(Uint8Array.from([0x22, 0x21, 0xa1, 0x03, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x53, 0x0f, 0x00, 0x00, 0x00, 0xbb, 0x00, 0xb8, 0xff]));
+assert.equal(a1Reelle.cmd, 0xa1);
+assert.equal(a1Reelle.crcOk, true);
+const a1Txt = mxwStatusToText(a1Reelle.payload);
+assert.ok(a1Txt.includes('veille') && a1Txt.includes('batterie 83%') && a1Txt.includes('15°C') && a1Txt.includes('OK'), `statut reel A1 decode: ${a1Txt}`);
+
+const abReelle = parsePacket(Uint8Array.from([0x22, 0x21, 0xab, 0x00, 0x01, 0x00, 0x53, 0x3f, 0xff]));
+assert.equal(abReelle.cmd, 0xab);
+assert.equal(abReelle.payload[0], 83, 'batterie AB reelle = 83');
+
 console.log(`tous les tests passent (app v${APP_VERSION}, QR ${qr.getModuleCount()}x${qr.getModuleCount()} modules, ${TEMPLATES.length} templates + page de test)`);

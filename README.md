@@ -161,7 +161,8 @@ agodeo-web-printer/
 ### Tests et CI
 
 ```bash
-npm run ci     # = npm run check (node --check sur js/*.js) + npm test (tests du protocole)
+npm run ci     # = check-syntax (node --check) + check-imports (verifie que chaque import existe
+               #   bien comme export dans le module cible) + tests du protocole (CRC8, trames, QR, templates)
 ```
 
 La CI GitHub Actions (`.github/workflows/ci.yml`) exécute ces vérifications à chaque push sur la branche et sur la PR.
@@ -231,7 +232,7 @@ Affiche la version (`v2.0.0` en haut de page + dans le journal), branche les bou
 | `B0` | `00` | type d'impression |
 | `B1` | `00` | version firmware (chaîne UTF-8) |
 
-**Réponse statut `A1`** (payload) : `[0]` état (0 veille, 1 impression, 2 avance, 3 éjection), `[3]` batterie %, `[4]` température tête °C, `[6]` 0 = OK sinon erreur, `[7]` code erreur (0x01/0x09 = pas de papier, 0x04 = surchauffe, 0x08 = batterie faible).
+**Réponse statut `A1`** (payload) : `[0]` état (0 veille, 1 impression, 2 avance, 3 éjection), `[3]` batterie %, `[4]` température tête °C, `[6]` 0 = OK sinon erreur, `[7]` code erreur (0x01/0x09 = pas de papier, 0x04 = surchauffe, 0x08 = batterie faible). Trame réelle capturée (batterie 83 %, 15 °C, veille) : `22 21 a1 03 0a 00 00 00 00 53 0f 00 00 00 bb 00 b8 ff` — notez le 3ᵉ octet `03` (octet de direction variable sur les réponses) et l'octet `[8]` (`0xbb`) de signification inconnue. `AB` renvoie la batterie seule en 1 octet (ex. `53` = 83 %).
 
 **Séquence d'impression MXW01** (implémentée dans `_printMxw`) :
 
