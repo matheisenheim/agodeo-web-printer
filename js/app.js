@@ -1,5 +1,6 @@
 import { CatPrinter } from './printer.js';
-import { textSource, imageSource, qrSource, renderSourceToLines, drawPreview } from './image.js';
+import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
+import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
 import { startCamera, stopCamera, cameraRunning, captureFrame } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
