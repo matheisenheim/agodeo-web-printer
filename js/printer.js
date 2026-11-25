@@ -163,10 +163,15 @@ export class CatPrinter {
 
   async _write(bytes) {
     await this._waitIfPaused();
-    if (this.writeChar.properties.writeWithoutResponse) {
-      await this.writeChar.writeValueWithoutResponse(bytes);
-    } else {
-      await this.writeChar.writeValue(bytes);
+    const CHUNK = 20;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      const part = bytes.slice(i, i + CHUNK);
+      if (this.writeChar.properties.writeWithoutResponse) {
+        await this.writeChar.writeValueWithoutResponse(part);
+      } else {
+        await this.writeChar.writeValue(part);
+      }
+      if (i + CHUNK < bytes.length) await sleep(15);
     }
   }
 
@@ -203,10 +208,15 @@ export class CatPrinter {
     const state = await this.getState();
     if (state && (state.flags & STATE.noPaper)) throw new Error('pas de papier ou capot ouvert');
     await this.send(CMD.setQuality, Uint8Array.from([quality]));
+    await sleep(80);
     await this.send(CMD.lattice, LATTICE_START);
+    await sleep(80);
     await this.send(CMD.setEnergy, Uint8Array.from([energy & 0xff, (energy >> 8) & 0xff]));
+    await sleep(80);
     await this.send(CMD.feedSpeed, Uint8Array.from([0x00]));
+    await sleep(80);
     await this.send(CMD.drawMode, Uint8Array.from([0x00]));
+    await sleep(80);
     for (let i = 0; i < lines.length; i++) {
       await this.send(CMD.drawLine, lines[i]);
       if ((i + 1) % chunkLines === 0) await sleep(chunkDelayMs);

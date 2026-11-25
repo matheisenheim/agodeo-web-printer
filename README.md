@@ -206,6 +206,7 @@ A3 (état, optionnel) → A4 qualité → A6 début → AF énergie → BD vites
 | État = « pas de papier » ou impression blanche | Recharger un rouleau 57 mm, face thermosensible vers la tête ; monter l'énergie (curseur densité) ; le papier thermique est parfois de mauvaise qualité |
 | Impression coupée / déconnexion | Rapprocher l'imprimante, attendre la fin (bit BUSY `0x80`), recharger la page et reconnecter |
 | Lignes manquantes ou décalées | Le flow control `AE 10` met l'envoi en pause — c'est géré automatiquement ; ne pas fermer l'onglet pendant l'impression |
+| « Imprimer » ne fait rien réagir l'imprimante | Tester d'abord **« Avancer le papier »** (commande `A1`) : si le papier avance, le canal d'écriture fonctionne et le souci vient de la séquence d'impression ; si rien ne bouge, fermer FunPrint sur le téléphone, éteindre/rallumer l'imprimante, recharger la page. Dans les deux cas, joindre le journal BLE (trames `envoi`/`reçu`) |
 
 Astuce : compare les trames du journal BLE avec celles capturées (nRF Connect) si un modèle clone ne répond pas — certains annoncent le service `AF30` au lieu de `AE30` ; le code retombe alors automatiquement sur le premier service possédant une caractéristique write + notify.
 
