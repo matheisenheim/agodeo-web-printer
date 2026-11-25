@@ -39,11 +39,15 @@ Web Bluetooth n'est disponible qu'en **HTTPS** ou sur **`http://localhost` / `ht
 git clone https://github.com/matheisenheim/agodeo-web-printer.git
 cd agodeo-web-printer
 git checkout vibe/agodeo-web-printer-7ead01
+python serve.py                 # recommandé : Cache-Control no-store, aucun 304 en dev
+# ou à défaut :
 python -m http.server 8000      # Windows
 python3 -m http.server 8000     # Linux / macOS
 ```
 
 Puis ouvrir [http://localhost:8000](http://localhost:8000) dans **Chrome ou Edge**.
+
+> ⚠ Si la page affiche une vieille version (boutons morts, pas de n° de version) : le navigateur sert son cache. Solutions : lancer avec `python serve.py` + **Ctrl+Shift+R**, ou F12 → Network → cocher « Disable cache », ou Chrome → ⋮ → « Effacer les données de ce site ». Pour une PWA installée : la retirer de l'écran d'accueil, effacer les données du site, puis la réinstaller.
 
 Alternatives : `npx serve .`, ou VS Code → clic droit sur `index.html` → « Open with Live Server ».
 
