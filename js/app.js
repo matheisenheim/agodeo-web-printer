@@ -1,16 +1,21 @@
 import { CatPrinter } from './printer.js';
 import { renderTextToLines, renderImageFileToLines, drawPreview } from './image.js';
+import { APP_VERSION } from './protocol.js';
 
 const $ = (id) => document.getElementById(id);
 const printer = new CatPrinter();
 let currentLines = [];
 let imageFile = null;
 
+$('appVersion').textContent = `v${APP_VERSION}`;
+
 printer.onLog = (msg) => {
   const log = $('log');
   log.textContent += `${msg}\n`;
   log.scrollTop = log.scrollHeight;
 };
+
+printer.onLog(`agodeo-web-printer v${APP_VERSION}`);
 
 printer.onState = (flags, text) => {
   $('printerState').textContent = `État : ${text}`;
