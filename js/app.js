@@ -246,10 +246,19 @@ $('btnFeed').addEventListener('click', async () => {
 
 const TABS = { Text: 'paneText', Image: 'paneImage', Qr: 'paneQr', Template: 'paneTemplate', Photobooth: 'panePhotobooth' };
 
+let savedMode = null;
+
 function switchTab(tab) {
   for (const [name, pane] of Object.entries(TABS)) {
     $(`tab${name}`).classList.toggle('active', name === tab);
     $(pane).hidden = name !== tab;
+  }
+  if (tab === 'Photobooth') {
+    if (savedMode === null) savedMode = $('printMode').value;
+    $('printMode').value = '2';
+  } else if (savedMode !== null) {
+    $('printMode').value = savedMode;
+    savedMode = null;
   }
   if (tab !== 'Photobooth' && cameraRunning()) {
     stopCamera($('cam'));
