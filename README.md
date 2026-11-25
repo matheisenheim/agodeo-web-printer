@@ -88,7 +88,7 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 
 ### Labo protocole (reverse engineering)
 
-Panneau **« Labo protocole »** : envoie une trame brute (`cmd` + `payload` en hex, ex. `ae` / `00`) sur `AE01` avec le bon header (auto selon le protocole détecté) ; les réponses de l'imprimante arrivent dans le journal BLE. Boutons rapides : `A7` compteur, `AB` batterie, `A4` retract, `B1` version.
+Panneau **« Labo protocole »** : envoie une trame brute (`cmd` + `payload` en hex, ex. `ae` / `00`) sur `AE01` avec le bon header (auto selon le protocole détecté) ; les réponses de l'imprimante arrivent dans le journal BLE. Boutons rapides : `A7` (ID série), `AB` batterie, `A4` retract, `B1` version.
 
 Pour découvrir `AE`, `B2`, `B3` (inconnues), 3 pistes :
 
@@ -102,7 +102,7 @@ Onglet **Photobooth** : aperçu webcam en direct (`getUserMedia`, exige HTTPS/lo
 
 **Page de test** : bouton « Page de test » (panneau Impression) → génère une mire (titre + date + version, damier d'alignement, barre des 16 niveaux de gris, 8 lignes de texte, QR du projet) et l'imprime directement si l'imprimante est connectée, sinon la met dans l'aperçu.
 
-**Infos appareil** (bouton « Infos appareil B0/B1 ») : affiche le **firmware (B1)**, le **type d'impression (B0)** et le **compteur d'impressions interne (A7)** en hex.
+**Infos appareil** (bouton « Infos appareil B0/B1 ») : affiche le **firmware (B1)**, le **type d'impression (B0)** et le **ID série (A7)** en hex (6 octets).
 
 ### Modèles d'étiquettes (thème thé)
 
