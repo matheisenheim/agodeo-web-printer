@@ -218,6 +218,7 @@ A1 00 (statut) → A2 <intensité> → A9 <height LE16> <bytesParLigne> <mode> �
 
 ## 7. Limites et confidentialité
 
+- **USB-C = charge uniquement** : le MXW01 n'expose aucune interface de données USB (pas de port série), donc ni WebUSB (PC) ni l'USB OTG (téléphone Android) ne peuvent s'y connecter — le seul canal de données est le **BLE**. Si un clone expose un port série, on pourrait y envoyer la même trame raster.
 - Impression **noir et blanc** uniquement, 384 px (57 mm). Le papier thermique s'efface avec le temps et la chaleur : pas un support d'archivage.
 - **Tout est local** : aucune image ni texte ne quitte le navigateur.
 - Web Bluetooth **indisponible sur iPhone/iPad** ; pour iOS il faudrait une app native (Swift/CoreBluetooth) — `js/protocol.js` est directement réutilisable.
