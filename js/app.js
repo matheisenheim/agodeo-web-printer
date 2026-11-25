@@ -6,6 +6,14 @@ import { startCamera, stopCamera, cameraRunning, captureFrame } from './photoboo
 import { APP_VERSION } from './protocol.js';
 
 const $ = (id) => document.getElementById(id);
+function val(id, def = '') {
+  const el = document.getElementById(id);
+  return el ? el.value : def;
+}
+function isChecked(id, def = true) {
+  const el = document.getElementById(id);
+  return el ? el.checked : def;
+}
 const LAST_KEY = 'agodeo-last-device';
 const printer = new CatPrinter();
 let currentSource = null;
@@ -36,12 +44,12 @@ printer.onDisconnect = () => {
 };
 
 function currentMode() {
-  return Number($('printMode').value);
+  return Number(val('printMode', '0'));
 }
 
 function currentDither() {
   if (!currentSource) return false;
-  if (currentSource.kind === 'image' || currentSource.kind === 'photobooth') return $('dither').checked;
+  if (currentSource.kind === 'image' || currentSource.kind === 'photobooth') return isChecked('dither', true);
   return false;
 }
 
@@ -106,9 +114,9 @@ function buildTemplateUI() {
 function refreshPreview() {
   const tab = activeTab();
   if (tab === 'text') {
-    currentSource = textSource($('textInput').value, Number($('fontSize').value), $('fontFamily').value);
+    currentSource = textSource(val('textInput'), Number(val('fontSize', '24')), val('fontFamily', 'sans-serif'));
   } else if (tab === 'qr') {
-    currentSource = qrSource($('qrText').value);
+    currentSource = qrSource(val('qrText'));
   } else if (tab === 'template') {
     collectTemplateValues();
   }
@@ -156,7 +164,7 @@ function showReconnectButton() {
 $('btnConnect').addEventListener('click', async () => {
   try {
     $('connStatus').textContent = 'Choisis ton imprimante dans la liste…';
-    await printer.connect($('namePrefix').value.trim());
+    await printer.connect(val('namePrefix').trim());
     afterConnect();
   } catch (e) {
     let msg = e.message;
@@ -239,7 +247,7 @@ $('btnUsbPick').addEventListener('click', async () => {
 
 $('btnFeed').addEventListener('click', async () => {
   try {
-    await printer.feed(Number($('feedSteps').value) || 50);
+    await printer.feed(Number(val('feedSteps', '50')) || 50);
     $('printStatus').textContent = 'Papier avancé.';
   } catch (e) {
     $('printStatus').textContent = `Erreur : ${e.message}`;
@@ -277,7 +285,7 @@ $('tabTemplate').addEventListener('click', () => switchTab('Template'));
 $('tabPhotobooth').addEventListener('click', () => switchTab('Photobooth'));
 
 function applyMirror() {
-  $('cam').classList.toggle('mirrored', $('pbMirror').checked);
+  $('cam').classList.toggle('mirrored', isChecked('pbMirror', true));
 }
 
 $('pbMirror').addEventListener('change', applyMirror);
@@ -324,10 +332,10 @@ $('btnCam').addEventListener('click', async () => {
 
 $('btnCapture').addEventListener('click', async () => {
   try {
-    if ($('pbTimer').checked) await countdown(3);
-    const bmp = await captureFrame($('cam'), undefined, $('pbMirror').checked);
-    currentSource = $('pbFrame').checked
-      ? { kind: 'photobooth', bmp, label: $('pbLabel').value }
+    if (isChecked('pbTimer', true)) await countdown(3);
+    const bmp = await captureFrame($('cam'), undefined, isChecked('pbMirror', true));
+    currentSource = isChecked('pbFrame', true)
+      ? { kind: 'photobooth', bmp, label: val('pbLabel', 'Souriez !') }
       : { kind: 'image', bmp };
     refreshPreview();
     $('printStatus').textContent = 'Photo capturée — « Imprimer » pour la sortir.';
@@ -369,7 +377,7 @@ async function labSend(cmdHex, payloadHex) {
   }
 }
 
-$('btnLabSend').addEventListener('click', () => labSend($('labCmd').value, $('labPayload').value));
+$('btnLabSend').addEventListener('click', () => labSend(val('labCmd'), val('labPayload')));
 
 document.querySelectorAll('.lab-quick').forEach((b) => {
   b.addEventListener('click', () => labSend(b.dataset.cmd, b.dataset.payload));
@@ -396,8 +404,8 @@ $('btnPrint').addEventListener('click', async () => {
     const lines = renderSourceToLines(currentSource, { mode, dither: currentDither() });
     $('printStatus').textContent = `Impression de ${lines.length} lignes (mode ${mode === 2 ? '4 bits / 16 gris — HD' : '1 bit mono'})…`;
     const n = await printer.printLines(lines, {
-      energy: Number($('energy').value),
-      feed: $('autoFeed').checked ? Number($('feedSteps').value) || 50 : 0,
+      energy: Number(val('energy', '49152')),
+      feed: isChecked('autoFeed', true) ? Number(val('feedSteps', '50')) || 50 : 0,
       mode,
     });
     $('printStatus').textContent = `Terminé : ${n} lignes envoyées.`;
