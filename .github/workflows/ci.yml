@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [vibe/agodeo-web-printer-7ead01]
+    branches: [main, vibe/agodeo-web-printer-7ead01]
   pull_request:
 
 jobs:
