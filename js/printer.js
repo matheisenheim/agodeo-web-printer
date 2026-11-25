@@ -37,7 +37,7 @@ export class CatPrinter {
       : { acceptAllDevices: true, optionalServices: [SERVICE_UUID] };
     this.device = await navigator.bluetooth.requestDevice(options);
     this.device.addEventListener('gattserverdisconnected', () => this.onDisconnect());
-    const server = await this.device.gatt.connect();
+    const server = await this._connectGattWithRetry();
     const channel = await this._findChannel(server);
     this.writeChar = channel.write;
     this.notifyChar = channel.notify;
@@ -59,13 +59,41 @@ export class CatPrinter {
     return this.device;
   }
 
+  async _connectGattWithRetry(attempts = 3) {
+    let lastErr = null;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        if (!this.device.gatt.connected) {
+          await this.device.gatt.connect();
+        }
+        if (this.device.gatt.connected) return this.device.gatt;
+      } catch (e) {
+        lastErr = e;
+        this.onLog(`connexion GATT tentative ${i + 1}/${attempts} : ${e.message}`);
+      }
+      await sleep(800);
+    }
+    throw lastErr || new Error('connexion GATT impossible');
+  }
+
+  async _ensureConnected(server) {
+    if (!server.connected) {
+      this.onLog('GATT déconnecté, reconnexion…');
+      return this._connectGattWithRetry();
+    }
+    return server;
+  }
+
   async _findChannel(server) {
+    server = await this._ensureConnected(server);
     let service = null;
     try {
       service = await server.getPrimaryService(SERVICE_UUID);
     } catch (e) {
+      server = await this._ensureConnected(server);
       const services = await server.getPrimaryServices();
-      service = services.find((s) => s.uuid.includes('ae30')) || services[0];
+      service = services.find((s) => s.uuid.includes('ae30') || s.uuid.includes('af30')) || services[0];
+      this.onLog(`services BLE trouvés : ${services.map((s) => s.uuid).join(', ')}`);
     }
     const chars = await service.getCharacteristics();
     const write = chars.find((c) => c.uuid.includes('ae01'))

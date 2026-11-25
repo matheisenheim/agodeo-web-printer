@@ -55,7 +55,11 @@ $('btnConnect').addEventListener('click', async () => {
     $('btnDisconnect').disabled = false;
     refreshPreview();
   } catch (e) {
-    $('connStatus').textContent = `Erreur de connexion : ${e.message}`;
+    let msg = e.message;
+    if (/disconnect|rejected|not connected|unavailable/i.test(msg)) {
+      msg += ' — ferme l\'app FunPrint sur ton téléphone (une seule connexion à la fois), éteins puis rallume l\'imprimante, recharge cette page, puis réessaie.';
+    }
+    $('connStatus').textContent = `Erreur de connexion : ${msg}`;
   }
 });
 
