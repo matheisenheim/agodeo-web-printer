@@ -72,7 +72,7 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 
 | Paramètre | Réglable ? | Commentaire |
 |---|---|---|
-| **DPI** | ❌ non | fixe à **203 dpi = 384 points sur 57 mm** — c'est la tête d'impression (hardware) |
+| **DPI** | ❌ non | fixe : la tête imprime **384 points physiques** (~48 mm imprimables → **~203 dpi réels**, 8 pts/mm). Les « 300 DPI » de la fiche commerciale sont une valeur interpolée (marketing), non atteignable par logiciel — la commande `A9` ne déclare que la largeur en octets, plafonnée à 48 octets = 384 px par la tête |
 | Densité / intensité | ✅ oui | curseur « énergie » → commande `A2` (0–100, défaut ~93) sur MXW01, `AF` sur cat classique |
 | Mode couleur | ✅ oui (MXW01) | `A9` mode `0` = 1 bit/px (48 octets/ligne, rapide) ou mode `2` = 4 bits/px, 16 niveaux de gris (192 octets/ligne, « HD », plus lent) — c'est l'option « HD » de l'app FunPrint |
 | Avance du papier | ✅ oui | nombre de lignes après impression (`A3` MXW01 / `A1` cat) |
