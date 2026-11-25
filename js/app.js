@@ -397,7 +397,7 @@ $('btnPrint').addEventListener('click', async () => {
     $('printStatus').textContent = `Impression de ${lines.length} lignes (mode ${mode === 2 ? '4 bits / 16 gris — HD' : '1 bit mono'})…`;
     const n = await printer.printLines(lines, {
       energy: Number($('energy').value),
-      feed: Number($('feedSteps').value) || 50,
+      feed: $('autoFeed').checked ? Number($('feedSteps').value) || 50 : 0,
       mode,
     });
     $('printStatus').textContent = `Terminé : ${n} lignes envoyées.`;

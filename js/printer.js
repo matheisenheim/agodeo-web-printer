@@ -354,8 +354,10 @@ export class CatPrinter {
     await this.send(MXW.flush, Uint8Array.from([0x00]));
     const done = await this._waitCmd(MXW.printComplete, 60000);
     this.onLog(done ? 'impression terminée (AA reçu)' : 'pas de AA reçu — l\'impression a peut-être quand même réussi');
-    await sleep(300);
-    await this.send(MXW.feed, Uint8Array.from([feedLines & 0xff, (feedLines >> 8) & 0xff]));
+    if (feedLines > 0) {
+      await sleep(300);
+      await this.send(MXW.feed, Uint8Array.from([feedLines & 0xff, (feedLines >> 8) & 0xff]));
+    }
     return lines.length;
   }
 
@@ -384,7 +386,7 @@ export class CatPrinter {
     await sleep(150);
     await this.send(CAT.lattice, LATTICE_END);
     await sleep(100);
-    await this.send(CAT.feed, Uint8Array.from([feed & 0xff]));
+    if (feed > 0) await this.send(CAT.feed, Uint8Array.from([feed & 0xff]));
     return lines.length;
   }
 }
