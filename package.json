@@ -1,0 +1,12 @@
+{
+  "name": "agodeo-web-printer",
+  "version": "2.3.0",
+  "private": true,
+  "type": "module",
+  "description": "App web locale (Web Bluetooth) pour mini imprimantes thermiques Agodeo/FunPrint (protocoles MXW01 et cat)",
+  "scripts": {
+    "check": "node test/check-syntax.js",
+    "test": "node test/protocol.test.js",
+    "ci": "npm run check && npm test"
+  }
+}

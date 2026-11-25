@@ -1,4 +1,5 @@
 import { PRINT_WIDTH, LINE_BYTES } from './protocol.js';
+import { qrMatrix } from './qr.js';
 
 export const LINE_BYTES_4BPP = PRINT_WIDTH / 2;
 
@@ -14,6 +15,25 @@ export async function imageSource(file) {
 export function sourceToCanvas(source) {
   const canvas = document.createElement('canvas');
   canvas.width = PRINT_WIDTH;
+  if (source.kind === 'qr') {
+    const qr = qrMatrix(source.text);
+    const count = qr.getModuleCount();
+    const quiet = 4;
+    const cell = Math.max(1, Math.floor(PRINT_WIDTH / (count + quiet * 2)));
+    const size = cell * (count + quiet * 2);
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, size);
+    ctx.fillStyle = '#000000';
+    const off = Math.floor((PRINT_WIDTH - cell * (count + quiet * 2)) / 2);
+    for (let r = 0; r < count; r++) {
+      for (let c = 0; c < count; c++) {
+        if (qr.isDark(r, c)) ctx.fillRect(off + (c + quiet) * cell, (r + quiet) * cell, cell, cell);
+      }
+    }
+    return canvas;
+  }
   if (source.kind === 'text') {
     const fontSize = source.fontSize ?? 24;
     const fontFamily = source.fontFamily ?? 'sans-serif';

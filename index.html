@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agodeo Web Printer</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#2b3a55">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,6 +22,7 @@
       <input id="namePrefix" type="text" placeholder="Préfixe du nom BLE (ex. MXW01), vide = tous les appareils">
       <button id="btnConnect">Connecter l'imprimante</button>
       <button id="btnDisconnect" disabled>Déconnecter</button>
+      <button id="btnReconnect" hidden>Reconnecter à <span id="reconnectLabel"></span></button>
     </div>
     <div id="connStatus" class="status">Non connecté</div>
     <div class="row">
@@ -40,6 +45,7 @@
     <div class="tabs">
       <button id="tabText" class="tab active">Texte</button>
       <button id="tabImage" class="tab">Image</button>
+      <button id="tabQr" class="tab">QR code</button>
     </div>
     <div id="paneText">
       <textarea id="textInput" rows="4">Bonjour ! Ceci est un test d'impression.</textarea>
@@ -57,6 +63,10 @@
     <div id="paneImage" hidden>
       <input id="imageInput" type="file" accept="image/*">
       <label><input id="dither" type="checkbox" checked> Dithering Floyd-Steinberg (photos)</label>
+    </div>
+    <div id="paneQr" hidden>
+      <input id="qrText" type="text" placeholder="Texte ou URL à encoder en QR code">
+      <p class="hint">Le QR est généré localement (hors ligne) et rempli au mieux les 384 px de large.</p>
     </div>
     <div class="row">
       <label>Énergie / densité <input id="energy" type="range" min="16384" max="65535" value="49152"></label>

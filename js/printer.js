@@ -30,6 +30,8 @@ export class CatPrinter {
     this.header = HEADER_CAT;
     this.paused = false;
     this.lastState = null;
+    this.lastBattery = null;
+    this._pollTimer = null;
     this.onLog = () => {};
     this.onState = () => {};
     this.onDisconnect = () => {};
@@ -47,6 +49,20 @@ export class CatPrinter {
       ? { filters: [{ namePrefix }], optionalServices: [SERVICE_UUID] }
       : { acceptAllDevices: true, optionalServices: [SERVICE_UUID] };
     this.device = await navigator.bluetooth.requestDevice(options);
+    await this._attach(this.device);
+    return this.device;
+  }
+
+  async reconnect(deviceId) {
+    const devices = await navigator.bluetooth.getDevices();
+    const d = devices.find((x) => x.id === deviceId);
+    if (!d) throw new Error('appareil non autorisé par le navigateur : repasse par « Connecter l\'imprimante »');
+    await this._attach(d);
+    return d;
+  }
+
+  async _attach(device) {
+    this.device = device;
     this.device.addEventListener('gattserverdisconnected', () => this.onDisconnect());
     const server = await this._connectGattWithRetry();
     const channel = await this._findChannel(server);
@@ -165,6 +181,7 @@ export class CatPrinter {
       if (pkt.cmd === MXW.status) {
         const text = mxwStatusToText(pkt.payload);
         this.lastState = { text };
+        this.lastBattery = pkt.payload.length > 3 ? pkt.payload[3] : null;
         this.onState(0, text);
       }
       if (pkt.cmd === MXW.version) {
@@ -274,6 +291,20 @@ export class CatPrinter {
       version: v && v.payload.length ? new TextDecoder().decode(v.payload).replace(/\0+$/, '') : null,
       type: t && t.payload.length ? t.payload[0] : null,
     };
+  }
+
+  startStatusPolling(intervalMs = 30000) {
+    this.stopStatusPolling();
+    this._pollTimer = setInterval(() => {
+      if (this.connected) this.getState(3000).catch(() => {});
+    }, intervalMs);
+  }
+
+  stopStatusPolling() {
+    if (this._pollTimer) {
+      clearInterval(this._pollTimer);
+      this._pollTimer = null;
+    }
   }
 
   async feed(steps = 50) {

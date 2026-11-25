@@ -1,0 +1,14 @@
+{
+  "name": "Agodeo Web Printer",
+  "short_name": "Agodeo Print",
+  "description": "Imprimer texte, images et QR codes sur mini imprimante thermique BLE (Agodeo / FunPrint MXW01)",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#2b3a55",
+  "theme_color": "#2b3a55",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

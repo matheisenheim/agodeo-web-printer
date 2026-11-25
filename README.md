@@ -7,7 +7,7 @@ Application web **100 % locale et statique** (aucun serveur backend, aucune donn
 - **MXW01** (ton Agodeo) : trames `22 21 … FF`, commandes sur `AE01`, réponses sur `AE02`, image sur `AE03`
 - **cat classique** (GB01, GT01…) : trames `51 78 … FF`, tout sur `AE01`/`AE02`
 
-L'application permet de se connecter depuis le navigateur, lire l'état (papier, batterie, température, surchauffe), imprimer du **texte** ou une **image/photo** (bitmap noir et blanc 384 px, dithering Floyd-Steinberg optionnel), régler la densité et avancer le papier.
+L'application permet de se connecter depuis le navigateur, lire l'état (papier, batterie, température, surchauffe), imprimer du **texte**, une **image/photo** (bitmap 384 px, dithering Floyd-Steinberg optionnel) ou un **QR code généré localement**, régler la densité et le mode (mono / 16 gris), et avancer le papier. Elle est **installable comme une appli (PWA)** et se **reconnecte en un clic** au dernier appareil.
 
 ---
 
@@ -57,6 +57,10 @@ Sur téléphone, Web Bluetooth exige un **contexte sécurisé (HTTPS)** — `loc
 
 Puis, sur le téléphone : Chrome, Bluetooth activé, **autoriser l'autorisation Bluetooth pour le site** (cadenas → Autorisations → Bluetooth), fermer l'app FunPrint, allumer l'imprimante, cliquer « Connecter l'imprimante » et choisir MXW01 dans le sélecteur Android.
 
+### Installer l'app (PWA)
+
+En HTTPS (GitHub Pages) ou localhost, Chrome/Edge propose « Installer » / « Ajouter à l'écran d'accueil » (icône ⋮ → Installer l'application). L'app fonctionne ensuite **hors ligne** grâce au service worker (`sw.js` met en cache tous les fichiers, versionné avec l'app).
+
 ### Mettre à jour le code (nouvelles versions)
 
 Depuis le dossier du projet, sans modifier les fichiers toi-même :
@@ -76,7 +80,9 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 1. Allumer l'imprimante, charger un rouleau 57 mm, fermer FunPrint sur le téléphone.
 2. Cliquer **« Connecter l'imprimante »** (laisser le préfixe vide pour tout lister, ou taper `MXW01`), choisir l'imprimante dans le sélecteur du navigateur.
 3. **« État de l'imprimante »** : pour un MXW01 affiche état + batterie % + température de la tête + erreur éventuelle (pas de papier, surchauffe…).
-4. Onglet **Texte** ou **Image**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large).
+4. Onglet **Texte**, **Image** ou **QR code**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large).
+5. Si un appareil a déjà été connecté, le bouton **« Reconnecter à … »** ré-établit la liaison en un clic (sans repasser par le sélecteur), grâce aux autorisations conservées par le navigateur (`localStorage` + `navigator.bluetooth.getDevices()`).
+6. Tant que l'imprimante est connectée, son **état est ré-interrogé toutes les 30 s** (`A1`) : batterie, température, erreurs — avec une alerte ⚠ sous 20 % de batterie.
 
 ### Paramètres réglables
 
@@ -99,16 +105,32 @@ Le **journal BLE** en bas affiche toutes les trames envoyées (`envoi …`) et r
 
 ```
 agodeo-web-printer/
-├── index.html        structure de la page (connexion / contenu / impression + journal)
+├── index.html            structure de la page (connexion / contenu / impression + journal)
 ├── style.css
+├── manifest.webmanifest  PWA (installation sur téléphone/PC)
+├── sw.js                 service worker : cache hors ligne
+├── icon-192.png / icon-512.png
+├── package.json          scripts npm (check, test, ci)
+├── .github/workflows/ci.yml  CI GitHub Actions (syntaxe + tests à chaque push/PR)
+├── test/                 check-syntax.js + protocol.test.js (CRC8, trames, parse, statut, QR)
+├── vendor/               qrcode.mjs + qrcode_UTF8.mjs (Kazuhiko Arase, MIT) — génération QR hors ligne
 ├── js/
-│   ├── protocol.js   protocoles binaires purs (aucun DOM ni BLE) : trames, CRC8, commandes, décodage
-│   ├── printer.js    client BLE : connexion GATT, détection du protocole (AE03 => MXW01), notifications,
-│   │                 flow control, séquences d'impression MXW01 et cat, état, feed
-│   ├── image.js      rendu du contenu en bitmap : texte/image -> canvas -> lignes 48 octets, aperçu
-│   └── app.js        câblage de l'interface (boutons, onglets, version affichée, journal)
+│   ├── protocol.js       protocoles binaires purs (aucun DOM ni BLE) : trames, CRC8, commandes, décodage
+│   ├── printer.js        client BLE : connexion GATT (3 tentatives), reconnexion par id, détection du
+│   │                     protocole (AE03 => MXW01), notifications, polling d'état, séquences d'impression
+│   ├── image.js          rendu du contenu en bitmap : texte/image/QR -> canvas -> lignes 48/192 octets, aperçu
+│   ├── qr.js             source QR (matrice via vendor/qrcode)
+│   └── app.js            câblage de l'interface (onglets, reconnexion auto, SW, polling batterie, journal)
 └── README.md
 ```
+
+### Tests et CI
+
+```bash
+npm run ci     # = npm run check (node --check sur js/*.js) + npm test (tests du protocole)
+```
+
+La CI GitHub Actions (`.github/workflows/ci.yml`) exécute ces vérifications à chaque push sur la branche et sur la PR.
 
 ### `js/protocol.js`
 
@@ -233,3 +255,4 @@ Protocoles documentés publiquement par la communauté (reverse engineering) :
 
 - Protocole MXW01 (`22 21`) : [jeremy46231/MXW01-catprinter — PROTOCOL.md](https://github.com/jeremy46231/MXW01-catprinter/blob/master/PROTOCOL.md), [MaikelChan/CatPrinterBLE](https://github.com/MaikelChan/CatPrinterBLE), [clementvp/mxw01-thermal-printer](https://github.com/clementvp/mxw01-thermal-printer), [nikkoong/thermal-printer — PROTOCOL.md](https://github.com/nikkoong/thermal-printer/blob/main/PROTOCOL.md), [veli-ozturk/mxw01-sticker-printer](https://github.com/veli-ozturk/mxw01-sticker-printer)
 - Protocole cat classique (`51 78`) : [rbaron/catprinter](https://github.com/rbaron/catprinter) + [article](https://rbaron.net/blog/2021/08/15/Reverse-engineering-the-cat-printer-bluetooth-protocol), [wiki fulda1/Thermal_Printer](https://github.com/fulda1/Thermal_Printer/wiki/Cat-printer-protocol), [WerWolv](https://werwolv.net/blog/cat_printer/)
+- Génération QR : [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) (Kazuhiko Arase, MIT), embarqué dans `vendor/` pour fonctionner hors ligne

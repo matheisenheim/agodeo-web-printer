@@ -1,8 +1,9 @@
 import { CatPrinter } from './printer.js';
-import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
+import { textSource, imageSource, qrSource, renderSourceToLines, drawPreview } from './image.js';
 import { APP_VERSION } from './protocol.js';
 
 const $ = (id) => document.getElementById(id);
+const LAST_KEY = 'agodeo-last-device';
 const printer = new CatPrinter();
 let currentSource = null;
 
@@ -17,10 +18,14 @@ printer.onLog = (msg) => {
 printer.onLog(`agodeo-web-printer v${APP_VERSION}`);
 
 printer.onState = (flags, text) => {
-  $('printerState').textContent = `État : ${text}`;
+  const warn = printer.lastBattery !== null && printer.lastBattery !== undefined && printer.lastBattery < 20
+    ? '⚠ batterie < 20 % — '
+    : '';
+  $('printerState').textContent = `État : ${warn}${text}`;
 };
 
 printer.onDisconnect = () => {
+  printer.stopStatusPolling();
   $('connStatus').textContent = 'Déconnecté';
   $('btnConnect').disabled = false;
   $('btnDisconnect').disabled = true;
@@ -35,9 +40,18 @@ function currentDither() {
   return currentSource && currentSource.kind === 'image' ? $('dither').checked : false;
 }
 
+function activeTab() {
+  if ($('tabQr').classList.contains('active')) return 'qr';
+  if ($('tabImage').classList.contains('active')) return 'image';
+  return 'text';
+}
+
 function refreshPreview() {
-  if ($('tabText').classList.contains('active')) {
+  const tab = activeTab();
+  if (tab === 'text') {
     currentSource = textSource($('textInput').value, Number($('fontSize').value), $('fontFamily').value);
+  } else if (tab === 'qr') {
+    currentSource = qrSource($('qrText').value);
   }
   if (!currentSource) {
     drawPreview($('preview'), []);
@@ -58,21 +72,52 @@ async function refreshState() {
   }
 }
 
+function afterConnect() {
+  $('connStatus').textContent = `Connecté : ${printer.device.name || printer.device.id}`;
+  $('btnConnect').disabled = true;
+  $('btnDisconnect').disabled = false;
+  try {
+    localStorage.setItem(LAST_KEY, JSON.stringify({ id: printer.device.id, name: printer.device.name || '' }));
+  } catch (e) {}
+  showReconnectButton();
+  refreshPreview();
+  refreshState();
+  printer.startStatusPolling(30000);
+}
+
+function showReconnectButton() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(LAST_KEY) || 'null'); } catch (e) {}
+  if (saved && saved.id) {
+    $('btnReconnect').hidden = false;
+    $('reconnectLabel').textContent = saved.name || saved.id;
+  }
+}
+
 $('btnConnect').addEventListener('click', async () => {
   try {
     $('connStatus').textContent = 'Choisis ton imprimante dans la liste…';
     await printer.connect($('namePrefix').value.trim());
-    $('connStatus').textContent = `Connecté : ${printer.device.name || printer.device.id}`;
-    $('btnConnect').disabled = true;
-    $('btnDisconnect').disabled = false;
-    refreshPreview();
-    refreshState();
+    afterConnect();
   } catch (e) {
     let msg = e.message;
     if (/disconnect|rejected|not connected|unavailable/i.test(msg)) {
       msg += ' — ferme l\'app FunPrint sur ton téléphone (une seule connexion à la fois), éteins puis rallume l\'imprimante, recharge cette page, puis réessaie.';
     }
     $('connStatus').textContent = `Erreur de connexion : ${msg}`;
+  }
+});
+
+$('btnReconnect').addEventListener('click', async () => {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(LAST_KEY) || 'null'); } catch (e) {}
+  if (!saved || !saved.id) return;
+  try {
+    $('connStatus').textContent = `Reconnexion à ${saved.name || saved.id}…`;
+    await printer.reconnect(saved.id);
+    afterConnect();
+  } catch (e) {
+    $('connStatus').textContent = `Erreur de reconnexion : ${e.message}`;
   }
 });
 
@@ -141,25 +186,22 @@ $('btnFeed').addEventListener('click', async () => {
   }
 });
 
-$('tabText').addEventListener('click', () => {
-  $('tabText').classList.add('active');
-  $('tabImage').classList.remove('active');
-  $('paneText').hidden = false;
-  $('paneImage').hidden = true;
+function switchTab(tab) {
+  for (const t of ['Text', 'Image', 'Qr']) {
+    $(`tab${t}`).classList.toggle('active', t === tab);
+    $(`pane${t === 'Qr' ? 'Qr' : t}`).hidden = t !== tab;
+  }
   refreshPreview();
-});
+}
 
-$('tabImage').addEventListener('click', () => {
-  $('tabImage').classList.add('active');
-  $('tabText').classList.remove('active');
-  $('paneImage').hidden = false;
-  $('paneText').hidden = true;
-  refreshPreview();
-});
+$('tabText').addEventListener('click', () => switchTab('Text'));
+$('tabImage').addEventListener('click', () => switchTab('Image'));
+$('tabQr').addEventListener('click', () => switchTab('Qr'));
 
 $('textInput').addEventListener('input', refreshPreview);
 $('fontSize').addEventListener('input', refreshPreview);
 $('fontFamily').addEventListener('change', refreshPreview);
+$('qrText').addEventListener('input', refreshPreview);
 
 $('imageInput').addEventListener('change', async (e) => {
   const file = e.target.files[0];
@@ -203,7 +245,12 @@ function checkEnvironment() {
   navigator.bluetooth.getAvailability().then((ok) => {
     if (!ok) $('connStatus').textContent = 'Bluetooth éteint ou indisponible sur cet appareil : active-le, puis recharge la page.';
   });
+  showReconnectButton();
   refreshPreview();
 }
 
 checkEnvironment();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
