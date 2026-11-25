@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.7.1';
+export const APP_VERSION = '2.7.2';
 
 export const SERVICE_UUID = '0000ae30-0000-1000-8000-00805f9b34fb';
 export const CHAR_WRITE_UUID = '0000ae01-0000-1000-8000-00805f9b34fb';
@@ -88,11 +88,11 @@ export function buildPacket(cmd, payload, header) {
 }
 
 export function parsePacket(bytes) {
-  if (!bytes || bytes.length < 8) return null;
+  if (!bytes || bytes.length < 7) return null;
   const headOk = (bytes[0] === 0x51 && bytes[1] === 0x78) || (bytes[0] === 0x22 && bytes[1] === 0x21);
-  if (!headOk || bytes[bytes.length - 1] !== 0xff) return null;
+  if (!headOk) return null;
   const len = bytes[4] | (bytes[5] << 8);
-  if (bytes.length < 6 + len + 2) return null;
+  if (bytes.length < 6 + len + 1) return null;
   const payload = bytes.slice(6, 6 + len);
   return {
     cmd: bytes[2],
@@ -100,6 +100,7 @@ export function parsePacket(bytes) {
     len,
     payload,
     crcOk: bytes[6 + len] === crc8(payload),
+    hasFooter: bytes[6 + len + 1] === 0xff,
   };
 }
 

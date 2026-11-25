@@ -61,4 +61,14 @@ const ackAe = parsePacket(Uint8Array.from([0x22, 0x21, 0xae, 0x00, 0x01, 0x00, 0
 assert.equal(ackAe.cmd, 0xae, 'ack AE recu (commande interne, echo)');
 assert.deepEqual(Array.from(ackAe.payload), [0x00]);
 
+const a1SansFooter = Uint8Array.from([0x22, 0x21, 0xa1, 0x03, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x50, 0x0f, 0x00, 0x00, 0x00, 0xbb, 0x00, 0x00]);
+const pSansFf = parsePacket(a1SansFooter);
+assert.ok(pSansFf, 'reponse A1 reelle recue SANS 0xFF final doit etre acceptee');
+assert.equal(pSansFf.cmd, 0xa1);
+assert.equal(pSansFf.hasFooter, false);
+assert.ok(mxwStatusToText(pSansFf.payload).includes('batterie 80%'), 'A1 sans footer: batterie 80%');
+
+const aaSansFooter = parsePacket(Uint8Array.from([0x22, 0x21, 0xaa, 0x00, 0x03, 0x00, 0x00, 0xc2, 0xc2, 0x00]));
+assert.equal(aaSansFooter.cmd, 0xaa, 'notification AA (print complete) recue sans footer');
+
 console.log(`tous les tests passent (app v${APP_VERSION}, QR ${qr.getModuleCount()}x${qr.getModuleCount()} modules, ${TEMPLATES.length} templates + page de test)`);

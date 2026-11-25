@@ -155,17 +155,15 @@ export class CatPrinter {
     buf.set(prev, 0);
     buf.set(bytes, prev.length);
     let offset = 0;
-    while (offset + 8 <= buf.length) {
+    while (offset + 7 <= buf.length) {
       const isCat = buf[offset] === 0x51 && buf[offset + 1] === 0x78;
       const isMxw = buf[offset] === 0x22 && buf[offset + 1] === 0x21;
       if (isCat || isMxw) {
-        let end = -1;
-        for (let i = offset + 6; i < buf.length; i++) {
-          if (buf[i] === 0xff) { end = i; break; }
-        }
-        if (end === -1) break;
-        this._handlePacket(buf.slice(offset, end + 1));
-        offset = end + 1;
+        const len = buf[offset + 4] | (buf[offset + 5] << 8);
+        const need = 6 + len + 1;
+        if (offset + need > buf.length) break;
+        this._handlePacket(buf.slice(offset, offset + need));
+        offset += need;
       } else {
         offset++;
       }
