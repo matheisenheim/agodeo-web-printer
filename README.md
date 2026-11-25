@@ -1,8 +1,13 @@
 # Agodeo Web Printer
 
-Application web **100 % locale et statique** (aucun serveur backend, aucune donnée envoyée sur Internet) pour piloter en Bluetooth Low Energy (BLE) les mini imprimantes thermiques de poche compatibles **FunPrint / Agodeo** — le protocole dit « cat printer », partagé par de nombreux modèles : MXW01, C9/C15/C17/C20/C23, X1/X2, GB01/GB02/GB03, GT01 et leurs clones.
+Application web **100 % locale et statique** (aucun serveur backend, aucune donnée envoyée sur Internet) pour piloter en Bluetooth Low Energy (BLE) les mini imprimantes thermiques de poche 57 mm compatibles **FunPrint / Agodeo** (famille « cat printer ») : MXW01 (Agodeo), C9/C15/C17/C20, X1/X2, GB01/GB02/GB03, GT01 et clones.
 
-L'application permet de se connecter à l'imprimante depuis le navigateur, de lire son état (papier, batterie, surchauffe), d'imprimer du **texte** ou une **image/photo** (converti en bitmap noir et blanc 384 px avec dithering Floyd-Steinberg optionnel), de régler la densité d'impression et d'avancer le papier.
+**Deux protocoles sont supportés et détectés automatiquement** (présence de la caractéristique de données `AE03`) :
+
+- **MXW01** (ton Agodeo) : trames `22 21 … FF`, commandes sur `AE01`, réponses sur `AE02`, image sur `AE03`
+- **cat classique** (GB01, GT01…) : trames `51 78 … FF`, tout sur `AE01`/`AE02`
+
+L'application permet de se connecter depuis le navigateur, lire l'état (papier, batterie, température, surchauffe), imprimer du **texte** ou une **image/photo** (bitmap noir et blanc 384 px, dithering Floyd-Steinberg optionnel), régler la densité et avancer le papier.
 
 ---
 
@@ -19,31 +24,32 @@ L'application permet de se connecter à l'imprimante depuis le navigateur, de li
 
 ### Contexte sécurisé obligatoire
 
-Web Bluetooth n'est disponible qu'en **HTTPS** ou sur **`http://localhost`**. En local, un simple serveur statique suffit : `python -m http.server` (Windows) ou `python3 -m http.server` (Linux/macOS). En production (hébergement), il faut un hébergement en HTTPS (GitHub Pages, Netlify, Vercel…).
+Web Bluetooth n'est disponible qu'en **HTTPS** ou sur **`http://localhost` / `http://127.0.0.1`** (pas l'IP du réseau). En local, un simple serveur statique suffit : `python -m http.server` (Windows) ou `python3 -m http.server` (Linux/macOS). En production : hébergement HTTPS (GitHub Pages, Netlify, Vercel…).
 
 ### Matériel
 
-- Mini imprimante thermique 57 mm type Agodeo/FunPrint, **allumée**, à proximité (< 10 m), Bluetooth activé côté PC/téléphone.
-- Rouleau de papier thermique **57 mm** chargé, face thermosensible (lisse/brillante) tournée vers la tête d'impression.
+- Mini imprimante thermique 57 mm type Agodeo/FunPrint, **allumée**, à proximité (< 10 m), Bluetooth activé côté PC/téléphone. **Une seule connexion BLE à la fois** : fermer l'app FunPrint sur le téléphone avant de connecter depuis le PC.
+- Rouleau de papier thermique **57 mm** chargé, face thermosensible (lisse/brillante) vers la tête d'impression, capot fermé.
 
 ---
 
 ## 2. Installation et lancement
 
-Aucune dépendance à installer : ce sont de simples fichiers statiques (HTML/CSS/JS modules ES).
-
 ```bash
 git clone https://github.com/matheisenheim/agodeo-web-printer.git
 cd agodeo-web-printer
+git checkout vibe/agodeo-web-printer-7ead01
 python -m http.server 8000      # Windows
 python3 -m http.server 8000     # Linux / macOS
 ```
 
 Puis ouvrir [http://localhost:8000](http://localhost:8000) dans **Chrome ou Edge**.
 
+Alternatives : `npx serve .`, ou VS Code → clic droit sur `index.html` → « Open with Live Server ».
+
 ### Mettre à jour le code (nouvelles versions)
 
-Depuis le dossier du projet, sans toucher à tes réglages (ne modifie pas les fichiers toi-même) :
+Depuis le dossier du projet, sans modifier les fichiers toi-même :
 
 ```bash
 git fetch origin
@@ -51,30 +57,20 @@ git checkout vibe/agodeo-web-printer-7ead01   # seulement la première fois
 git pull origin vibe/agodeo-web-printer-7ead01
 ```
 
-Puis recharge la page dans le navigateur avec **Ctrl+F5** (rechargement forcé, sinon le cache garde l'ancien JS) et vérifie le numéro de version affiché en haut de la page.
-
-Alternatives pour servir les fichiers en local :
-
-```bash
-npx serve .            # ou
-# VS Code : clic droit sur index.html -> "Open with Live Server"
-```
-
-Déploiement en ligne (HTTPS requis) : activer **GitHub Pages** sur ce repo (Settings → Pages → Deploy from branch), ou déposer le dossier sur Netlify/Vercel.
+Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vérifie le numéro de version affiché en haut de la page.
 
 ---
 
 ## 3. Guide d'utilisation
 
-1. Allumer l'imprimante et charger un rouleau 57 mm.
-2. Cliquer **« Connecter l'imprimante »**. Laisser le champ de préfixe vide pour lister tous les périphériques BLE, ou taper le préfixe du nom annoncé (souvent `MXW01`, `C17`, `X1`…). Choisir l'imprimante dans le sélecteur du navigateur et valider.
-3. Optionnel : **« État de l'imprimante »** affiche papier / batterie / capot / tête chaude / impression en cours.
-4. Choisir l'onglet **Texte** (saisir le texte, régler taille/police) ou **Image** (choisir un fichier PNG/JPG, cocher le dithering pour les photos). L'aperçu montre exactement ce qui sera imprimé (384 px de large).
-5. Régler **Énergie / densité** (curseur 0x4000–0xFFFF : plus haut = plus noir).
-6. Cliquer **« Imprimer »**. L'application envoie les commandes d'initialisation, puis chaque ligne de l'image, en respectant le contrôle de flux de l'imprimante, puis fait avancer le papier du nombre de pas indiqué.
-7. **« Avancer le papier »** éjecte manuellement l'étiquette (nombre de pas réglable).
+1. Allumer l'imprimante, charger un rouleau 57 mm, fermer FunPrint sur le téléphone.
+2. Cliquer **« Connecter l'imprimante »** (laisser le préfixe vide pour tout lister, ou taper `MXW01`), choisir l'imprimante dans le sélecteur du navigateur.
+3. **« État de l'imprimante »** : pour un MXW01 affiche état + batterie % + température de la tête + erreur éventuelle (pas de papier, surchauffe…).
+4. Onglet **Texte** ou **Image**, régler la **densité** (curseur énergie). L'aperçu montre exactement ce qui sera imprimé (384 px de large).
+5. **« Imprimer »** : envoie la séquence complète et attend la fin d'impression (notification `AA` sur MXW01).
+6. **« Avancer le papier »** éjecte l'étiquette (nombre de lignes réglable).
 
-Le **journal BLE** en bas de page affiche toutes les trames envoyées (`→`) et reçues (`←`) en hexadécimal — très utile pour déboguer ou comparer avec l'app officielle FunPrint.
+Le **journal BLE** en bas affiche toutes les trames envoyées (`envoi …`) et reçues (`reçu …`) en hex — indispensable pour déboguer.
 
 ---
 
@@ -82,117 +78,108 @@ Le **journal BLE** en bas de page affiche toutes les trames envoyées (`→`) et
 
 ```
 agodeo-web-printer/
-├── index.html        structure de la page (3 panneaux : connexion / contenu / impression + journal)
-├── style.css         mise en page
+├── index.html        structure de la page (connexion / contenu / impression + journal)
+├── style.css
 ├── js/
-│   ├── protocol.js   couche protocole « cat printer » pure (aucun accès au DOM ni au BLE)
-│   ├── printer.js    client BLE : connexion GATT, écriture, notifications, flow control, séquence d'impression
-│   ├── image.js      rendu du contenu en bitmap : texte -> canvas, image -> canvas, canvas -> lignes 48 octets, aperçu
-│   └── app.js        câblage de l'interface (boutons, onglets, aperçu, appels au client BLE)
+│   ├── protocol.js   protocoles binaires purs (aucun DOM ni BLE) : trames, CRC8, commandes, décodage
+│   ├── printer.js    client BLE : connexion GATT, détection du protocole (AE03 => MXW01), notifications,
+│   │                 flow control, séquences d'impression MXW01 et cat, état, feed
+│   ├── image.js      rendu du contenu en bitmap : texte/image -> canvas -> lignes 48 octets, aperçu
+│   └── app.js        câblage de l'interface (boutons, onglets, version affichée, journal)
 └── README.md
 ```
 
-### `js/protocol.js` — protocole binaire
+### `js/protocol.js`
 
-- Constantes : UUID du service `0000AE30-…`, caractéristique d'écriture `0000AE01-…` (write without response), de notification `0000AE02-…` ; `PRINT_WIDTH = 384` px, `LINE_BYTES = 48` octets/ligne.
-- `CMD` : tableau des commandes (`0xA0`…`0xBE`).
-- `LATTICE_START` / `LATTICE_END` : constantes de 11 octets envoyées en `0xA6` avant/après l'impression.
-- `crc8(bytes)` : CRC-8, polynôme **0x07**, init 0, calculé sur le **payload uniquement**.
-- `buildPacket(cmd, payload)` : assemble `51 78 <cmd> 00 <lenLo> <lenHi> <payload> <CRC8> FF`.
-- `parsePacket(bytes)` : décode une trame reçue (utile pour les notifications).
-- `stateToText(flags)` : traduit les bits d'état reçus en texte lisible.
-- `hex(bytes)` : formatage hex pour le journal.
+- `APP_VERSION`, UUIDs (service `AE30`, write `AE01`, notify `AE02`, data `AE03`), `PRINT_WIDTH = 384`, `LINE_BYTES = 48`.
+- `HEADER_CAT = [0x51, 0x78]` / `HEADER_MXW = [0x22, 0x21]` ; `CAT` et `MXW` : tables de commandes des deux familles.
+- `crc8(bytes)` : CRC-8 poly **0x07**, init 0, sur le **payload seul** (vérifié contre des captures réelles).
+- `buildPacket(cmd, payload, header)` : assemble `<header> <cmd> 00 <lenLo> <lenHi> <payload> <CRC8> FF`.
+- `parsePacket(bytes)` : décode une trame reçue (accepte les deux headers).
+- `stateToText` (cat) / `mxwStatusToText` (MXW01 : état, batterie, température, code erreur).
 
 ### `js/printer.js` — client BLE (`class CatPrinter`)
 
-- `connect(namePrefix)` : `navigator.bluetooth.requestDevice()` (filtre par préfixe de nom ou `acceptAllDevices`), connexion GATT, puis `_findChannel()` localise le service `AE30` (ou le premier service possédant une caractéristique write + notify, pour tolérer les clones aux UUID légèrement différents), démarre les notifications sur `AE02`.
-- `_onNotify(bytes)` : décode les trames reçues — `0xAE` avec payload `0x10` = **pause** (tampon plein), `0x00` = reprise (réveille les écritures en attente) ; `0xA3` avec dir=1 = réponse d'état (papier, batterie…).
-- `send(cmd, payload)` : construit le paquet, journalise, écrit sur `AE01` en `writeValueWithoutResponse` (avec attente si l'imprimante a demandé une pause).
-- `getState(timeoutMs)` : envoie `A3`, attend la réponse d'état (2 s max).
-- `feed(steps)` : envoie `A1` (avancer le papier de N pas).
-- `printLines(lines, opts)` : séquence complète d'impression (voir §5), avec envoi des lignes par paquets de `chunkLines` (4) séparés de `chunkDelayMs` (40 ms) pour ménager le tampon BLE.
+- `connect(namePrefix)` : `requestDevice` (filtre par préfixe de nom ou tous les appareils), connexion GATT **avec 3 tentatives**, `_findChannel()` localise le service `AE30`/`AF30` et les caractéristiques (write `AE01`/`AF01`, notify `AE02`/`AF02`, data `AE03`/`AF03` si présent → protocole MXW01), démarre les notifications.
+- `_onNotify` : réassemble les notifications BLE fragmentées en trames complètes (`… FF`), puis `_handlePacket` dispatche : statut, flow control `AE` (cat), ack `A9`, fin `AA` (MXW01), et réveille les attentes `_waitCmd(cmd)`.
+- `send(cmd, payload)` : construit la trame avec le bon header et écrit sur `AE01` **par morceaux de 20 octets** (sûr pour un MTU de 23), 12 ms entre les morceaux, en préférant `writeValue` (avec acquittement) quand disponible.
+- `getState()` : `A1 00` (MXW01) ou `A3 00` (cat), attend la réponse (3 s).
+- `feed(steps)` : `A3 <lignes LE16>` (MXW01) ou `A1 <pas>` (cat).
+- `printLines(lines, opts)` : délègue à `_printMxw` ou `_printCat` (voir §5).
 
-### `js/image.js` — contenu → bitmap imprimable
+### `js/image.js`
 
-- `renderTextToLines(text, {fontSize, fontFamily})` : découpe le texte à la largeur 384 px sur un `<canvas>` (retour à la ligne sur les espaces), puis convertit en lignes bitmap.
-- `renderImageFileToLines(file, {dither})` : charge l'image (`createImageBitmap`), la redimensionne à 384 px de large en conservant le ratio, puis convertit.
-- `bitmapFromCanvas(canvas, dither)` : lit les pixels (`getImageData`), calcule le niveau de gris (0.299R + 0.587G + 0.114B), applique le **dithering de Floyd-Steinberg** si demandé (sinon simple seuil à 128), puis empaquette chaque ligne de 384 px en **48 octets, LSB = pixel de gauche, bit à 1 = pixel noir**.
-- `drawPreview(canvas, lines)` : dessine le bitmap dans l'aperçu de la page.
+- `renderTextToLines` : retour à la ligne à 384 px sur un `<canvas>`.
+- `renderImageFileToLines` : redimensionne l'image à 384 px de large.
+- `bitmapFromCanvas` : niveaux de gris (0.299R+0.587G+0.114B), dithering **Floyd-Steinberg** optionnel (sinon seuil 128), puis empaquetage : chaque ligne de 384 px = **48 octets, LSB = pixel de gauche, bit 1 = noir**.
+- `drawPreview` : aperçu dans la page.
 
-### `js/app.js` — interface
+### `js/app.js`
 
-Instancie `CatPrinter`, branche les boutons (connecter/déconnecter, état, feed, imprimer), les onglets Texte/Image, les réglages (taille, police, énergie), met à jour l'aperçu à chaque changement, et affiche le journal BLE. Si `navigator.bluetooth` est absent, le bouton de connexion est désactivé avec un message explicatif.
+Affiche la version (`v2.0.0` en haut de page + dans le journal), branche les boutons, détecte l'environnement (contexte sécurisé, `navigator.bluetooth`, `getAvailability()`), met à jour l'aperçu, appelle le client BLE.
 
 ---
 
-## 5. Protocole BLE « cat printer » (référence)
+## 5. Protocoles BLE (référence)
 
-### Adressage
+### Commun aux deux familles
 
-| Rôle | UUID (base Bluetooth 128 bits) |
+| Rôle | UUID |
 |---|---|
-| Service principal | `0000AE30-0000-1000-8000-00805F9B34FB` |
-| Écriture des commandes | `0000AE01-0000-1000-8000-00805F9B34FB` (write without response) |
-| Notifications (état, flow control) | `0000AE02-0000-1000-8000-00805F9B34FB` (notify) |
+| Service principal | `0000AE30-0000-1000-8000-00805F9B34FB` (annoncé parfois `AF30`) |
+| Commandes (write) | `0000AE01-…` (write without response / write) |
+| Notifications | `0000AE02-…` (notify) |
+| Données image (MXW01 seulement) | `0000AE03-…` (write without response) |
 
-### Structure d'un paquet
+**Trame** : `<header 2 octets> <cmd> <dir=00> <lenLo> <lenHi> <payload> <CRC8> FF`
+- `len` = longueur du payload, little-endian 16 bits
+- `CRC8` = CRC-8 poly 0x07, init 0, calculé **sur le payload seul**
+- `FF` = terminateur
 
-```
-51 78 <cmd> <dir> <lenLo> <lenHi> <payload...> <CRC8> FF
-```
+**Image** : 384 px de large = 48 octets par ligne, **LSB first** (bit 0 = pixel de gauche), **1 = noir**, 0 = blanc. Lignes contiguës, sans en-tête par ligne.
 
-- `51 78` : en-tête (STX)
-- `<cmd>` : commande (1 octet)
-- `<dir>` : 0 = commande envoyée à l'imprimante, 1 = réponse de l'imprimante
-- `<lenLo> <lenHi>` : longueur du payload en little-endian (16 bits)
-- `<payload>` : données de la commande
-- `<CRC8>` : CRC-8 (polynôme 0x07, init 0) calculé **sur le payload seul**
-- `FF` : terminateur (ETX)
+### Famille MXW01 — Agodeo / FunPrint (header `22 21`)
 
-**Exemple** — demande d'état (`A3`, payload `[0x00]`, CRC8(0x00) = 0x00) :
+| Cmd | Payload | Description |
+|---|---|---|
+| `A1` | `00` | statut → réponse `A1` sur `AE02` |
+| `A2` | intensité `00`–`64` (0x5D = 93 conseillé) | densité d'impression |
+| `A3` | lignes LE16 | avancer/éjecter le papier |
+| `A4` | lignes LE16 | rentrer le papier |
+| `A9` | `height LE16, 0x30, mode` | demande d'impression (hauteur en lignes, 48 octets/ligne, mode 0 = 1 bit/px) → attendre l'ack `A9` (payload[0] = 0x00 = OK) |
+| `AD` | `00` | fin des données image (flush) |
+| `AA` | — | **notification** : impression physique terminée |
+| `AB` | `00` | niveau de batterie → réponse 1 octet (0–100) |
+| `AC` | — | annuler l'impression |
+| `B0` | `00` | type d'impression |
+| `B1` | `00` | version firmware (chaîne UTF-8) |
 
-```
-51 78 A3 00 01 00 00 00 FF
-```
+**Réponse statut `A1`** (payload) : `[0]` état (0 veille, 1 impression, 2 avance, 3 éjection), `[3]` batterie %, `[4]` température tête °C, `[6]` 0 = OK sinon erreur, `[7]` code erreur (0x01/0x09 = pas de papier, 0x04 = surchauffe, 0x08 = batterie faible).
 
-**Exemple** — une ligne bitmap (`A2`, 48 octets de payload, len = 0x30) :
-
-```
-51 78 A2 00 30 00 <48 octets> <CRC8> FF
-```
-
-### Commandes utilisées
-
-| Cmd | Nom | Payload | Description |
-|---|---|---|---|
-| `0xA0` | retract | 1 octet = nombre de pas | reculer le papier |
-| `0xA1` | feed | 1 octet = nombre de pas | avancer le papier (éjection) |
-| `0xA2` | drawLine | 48 octets | une ligne de 384 px ; LSB = pixel de gauche ; bit 1 = pixel noir imprimé |
-| `0xA3` | getState | `[0x00]` | l'imprimante répond sur `AE02` (dir=1) |
-| `0xA4` | setQuality | 1 octet `0x31`–`0x36` (défaut `0x33`) | qualité d'impression |
-| `0xA6` | lattice | 11 octets | début : `AA 55 17 38 44 5F 5F 5F 44 38 2C` ; fin : `AA 55 17 00 00 00 00 00 00 00 17` |
-| `0xA8` | getInfo | `[0x00]` | infos appareil (modèle, firmware) sur `AE02` |
-| `0xAE` | lineControl | `[0x00]` = reprendre / `[0x10]` = pause | **reçu en notification** sur `AE02` : contrôle de flux (tampon plein) |
-| `0xAF` | setEnergy | 2 octets little-endian `0x0000`–`0xFFFF` | énergie thermique = densité (noir) |
-| `0xBD` | feedSpeed | 1 octet | vitesse d'avance du papier (`0x19` avant une avance à vide) |
-| `0xBE` | drawMode | 1 octet | 0 = image (bitmap), 1 = texte |
-
-### Bits de la réponse d'état (`A3`, dir = 1, payload[0])
-
-| Bit | Signification |
-|---|---|
-| `0x01` | pas de papier ou capot ouvert |
-| `0x02` | couvercle ouvert |
-| `0x04` | tête d'impression chaude |
-| `0x08` | batterie faible |
-| `0x80` | impression en cours (BUSY) |
-
-### Séquence d'impression complète (implémentée dans `printLines`)
+**Séquence d'impression MXW01** (implémentée dans `_printMxw`) :
 
 ```
-A3 (état, optionnel) → A4 qualité → A6 début → AF énergie → BD vitesse → BE mode image
-→ A2 ligne par ligne (avec pauses + flow control AE) → A6 fin → A1 feed
+A1 00 (statut) → A2 <intensité> → A9 <height LE16> 30 00 → attendre ack A9
+→ image (48 octets/ligne) sur AE03, par morceaux de 20 octets, 12 ms d'écart
+→ AD 00 → attendre AA (60 s max) → A3 <feed LE16>
 ```
+
+### Famille « cat » classique — GB01/GT01… (header `51 78`)
+
+| Cmd | Payload | Description |
+|---|---|---|
+| `A0` / `A1` | 1 octet (pas) | rentrer / avancer le papier |
+| `A2` | 48 octets | une ligne bitmap (LSB = pixel gauche, 1 = noir) |
+| `A3` | `00` | état → réponse sur `AE02` (bits : 0x01 pas de papier/capot, 0x02 couvercle, 0x04 tête chaude, 0x08 batterie faible, 0x80 busy) |
+| `A4` | `0x31`–`0x36` (défaut 0x33) | qualité |
+| `A6` | 11 octets | début : `AA 55 17 38 44 5F 5F 5F 44 38 2C` ; fin : `AA 55 17 00…00 17` |
+| `A8` | `00` | infos appareil |
+| `AE` | `00` XOn / `10` XOff | **reçu en notification** : contrôle de flux (pause/reprise) |
+| `AF` | 2 octets LE | énergie thermique (densité) 0x0000–0xFFFF |
+| `BD` | 1 octet | vitesse d'avance |
+| `BE` | 1 octet | mode : 0 = image |
+
+**Séquence cat** (`_printCat`) : `A3 → A4 → A6 début → AF → BD → BE → A2 ligne par ligne → A6 fin → A1`.
 
 ---
 
@@ -200,30 +187,27 @@ A3 (état, optionnel) → A4 qualité → A6 début → AF énergie → BD vites
 
 | Symptôme | Cause probable / solution |
 |---|---|
-| Bouton « Connecter » désactivé | Navigateur non supporté (Firefox/Safari) ou page non servie en HTTPS/localhost → utiliser Chrome/Edge en `http://localhost:8000` |
-| L'imprimante n'apparaît pas dans la liste | Elle est éteinte, trop loin, ou déjà connectée à l'app FunPrint (la fermer) ; recharger la page et réessayer ; essayer sans préfixe de nom |
-| `requestDevice` refuse / erreur | Sur Chrome Android : autoriser l'accès Bluetooth dans les paramètres du site ; vérifier que le Bluetooth du téléphone est activé |
-| État = « pas de papier » ou impression blanche | Recharger un rouleau 57 mm, face thermosensible vers la tête ; monter l'énergie (curseur densité) ; le papier thermique est parfois de mauvaise qualité |
-| Impression coupée / déconnexion | Rapprocher l'imprimante, attendre la fin (bit BUSY `0x80`), recharger la page et reconnecter |
-| Lignes manquantes ou décalées | Le flow control `AE 10` met l'envoi en pause — c'est géré automatiquement ; ne pas fermer l'onglet pendant l'impression |
-| « Imprimer » ne fait rien réagir l'imprimante | Tester d'abord **« Avancer le papier »** (commande `A1`) : si le papier avance, le canal d'écriture fonctionne et le souci vient de la séquence d'impression ; si rien ne bouge, fermer FunPrint sur le téléphone, éteindre/rallumer l'imprimante, recharger la page. Dans les deux cas, joindre le journal BLE (trames `envoi`/`reçu`) |
-
-Astuce : compare les trames du journal BLE avec celles capturées (nRF Connect) si un modèle clone ne répond pas — certains annoncent le service `AF30` au lieu de `AE30` ; le code retombe alors automatiquement sur le premier service possédant une caractéristique write + notify.
+| Bouton « Connecter » grisé | Navigateur non supporté (Firefox/Safari) ou URL non sécurisée → Chrome/Edge en `http://localhost:8000` |
+| L'imprimante n'apparaît pas dans la liste | Éteinte, trop loin, ou **encore connectée à l'app FunPrint du téléphone** → fermer FunPrint, éteindre le Bluetooth du tel, rallumer l'imprimante |
+| `GATT Server is disconnected` | L'imprimante n'accepte qu'un seul central BLE : la libérer côté téléphone, éteindre/rallumer l'imprimante, réessayer (3 tentatives auto) |
+| « Imprimer » / « Avancer le papier » ne fait rien | Vérifier papier chargé + capot fermé ; consulter le journal BLE : si `service=…ae30 write=…ae01 data=…ae03` → protocole MXW01 bien détecté ; si `data=-` → modèle cat classique |
+| Pas de réponse d'état | Informatif uniquement ; l'impression peut fonctionner quand même (tester « Imprimer ») |
+| Pas de papier / impression blanche | Recharger un rouleau 57 mm face thermosensible vers la tête ; monter la densité ; qualité du papier thermique variable |
+| Lignes manquantes / décalées | Ne pas fermer l'onglet pendant l'impression ; le flow control `AE 10` (cat) met l'envoi en pause automatiquement |
 
 ---
 
 ## 7. Limites et confidentialité
 
-- Impression **noir et blanc** uniquement, largeur fixe **384 px (57 mm)**. Le papier thermique s'efface avec le temps, la chaleur et le frottement : ce n'est pas un support d'archivage.
-- **Tout est local** : aucune image ni texte ne quitte le navigateur (aucune requête réseau dans le code, hors chargement initial des fichiers statiques).
-- Web Bluetooth ne fonctionne **pas sur iPhone/iPad** ; pour iOS il faudrait une app native (Swift/CoreBluetooth) — le protocole de `js/protocol.js` est directement réutilisable.
+- Impression **noir et blanc** uniquement, 384 px (57 mm). Le papier thermique s'efface avec le temps et la chaleur : pas un support d'archivage.
+- **Tout est local** : aucune image ni texte ne quitte le navigateur.
+- Web Bluetooth **indisponible sur iPhone/iPad** ; pour iOS il faudrait une app native (Swift/CoreBluetooth) — `js/protocol.js` est directement réutilisable.
 
 ---
 
 ## 8. Crédits
 
-Protocole « cat printer » documenté publiquement par la communauté (reverse engineering) :
+Protocoles documentés publiquement par la communauté (reverse engineering) :
 
-- [rbaron/catprinter](https://github.com/rbaron/catprinter) (MIT) et son [article](https://rbaron.net/blog/2021/08/15/Reverse-engineering-the-cat-printer-bluetooth-protocol)
-- [Wiki fulda1/Thermal_Printer — Cat printer protocol](https://github.com/fulda1/Thermal_Printer/wiki/Cat-printer-protocol)
-- [WerWolv — Thermal Printer BLE Protocol reverse engineering](https://werwolv.net/blog/cat_printer/)
+- Protocole MXW01 (`22 21`) : [jeremy46231/MXW01-catprinter — PROTOCOL.md](https://github.com/jeremy46231/MXW01-catprinter/blob/master/PROTOCOL.md), [MaikelChan/CatPrinterBLE](https://github.com/MaikelChan/CatPrinterBLE), [clementvp/mxw01-thermal-printer](https://github.com/clementvp/mxw01-thermal-printer), [nikkoong/thermal-printer — PROTOCOL.md](https://github.com/nikkoong/thermal-printer/blob/main/PROTOCOL.md), [veli-ozturk/mxw01-sticker-printer](https://github.com/veli-ozturk/mxw01-sticker-printer)
+- Protocole cat classique (`51 78`) : [rbaron/catprinter](https://github.com/rbaron/catprinter) + [article](https://rbaron.net/blog/2021/08/15/Reverse-engineering-the-cat-printer-bluetooth-protocol), [wiki fulda1/Thermal_Printer](https://github.com/fulda1/Thermal_Printer/wiki/Cat-printer-protocol), [WerWolv](https://werwolv.net/blog/cat_printer/)

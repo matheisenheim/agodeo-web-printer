@@ -1,13 +1,17 @@
-export const APP_VERSION = '1.4.1';
+export const APP_VERSION = '2.0.0';
 
 export const SERVICE_UUID = '0000ae30-0000-1000-8000-00805f9b34fb';
 export const CHAR_WRITE_UUID = '0000ae01-0000-1000-8000-00805f9b34fb';
 export const CHAR_NOTIFY_UUID = '0000ae02-0000-1000-8000-00805f9b34fb';
+export const CHAR_DATA_UUID = '0000ae03-0000-1000-8000-00805f9b34fb';
 
 export const PRINT_WIDTH = 384;
 export const LINE_BYTES = PRINT_WIDTH / 8;
 
-export const CMD = {
+export const HEADER_CAT = [0x51, 0x78];
+export const HEADER_MXW = [0x22, 0x21];
+
+export const CAT = {
   retract: 0xa0,
   feed: 0xa1,
   drawLine: 0xa2,
@@ -21,6 +25,21 @@ export const CMD = {
   drawMode: 0xbe,
 };
 
+export const MXW = {
+  status: 0xa1,
+  intensity: 0xa2,
+  feed: 0xa3,
+  retract: 0xa4,
+  queryCount: 0xa7,
+  printRequest: 0xa9,
+  printComplete: 0xaa,
+  battery: 0xab,
+  cancel: 0xac,
+  flush: 0xad,
+  printType: 0xb0,
+  version: 0xb1,
+};
+
 export const LATTICE_START = Uint8Array.from([0xaa, 0x55, 0x17, 0x38, 0x44, 0x5f, 0x5f, 0x5f, 0x44, 0x38, 0x2c]);
 export const LATTICE_END = Uint8Array.from([0xaa, 0x55, 0x17, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17]);
 
@@ -30,6 +49,14 @@ export const STATE = {
   headHot: 0x04,
   lowBattery: 0x08,
   busy: 0x80,
+};
+
+export const MXW_STATE = ['veille', 'impression en cours', 'avance du papier', 'éjection'];
+export const MXW_ERROR = {
+  0x01: 'pas de papier',
+  0x09: 'pas de papier',
+  0x04: 'tête chaude (surchauffe)',
+  0x08: 'batterie faible',
 };
 
 export function crc8(bytes) {
@@ -43,12 +70,13 @@ export function crc8(bytes) {
   return crc;
 }
 
-export function buildPacket(cmd, payload) {
+export function buildPacket(cmd, payload, header) {
+  const h = header || HEADER_CAT;
   const data = payload || new Uint8Array(0);
   const len = data.length;
   const out = new Uint8Array(6 + len + 2);
-  out[0] = 0x51;
-  out[1] = 0x78;
+  out[0] = h[0];
+  out[1] = h[1];
   out[2] = cmd;
   out[3] = 0x00;
   out[4] = len & 0xff;
@@ -61,7 +89,8 @@ export function buildPacket(cmd, payload) {
 
 export function parsePacket(bytes) {
   if (!bytes || bytes.length < 8) return null;
-  if (bytes[0] !== 0x51 || bytes[1] !== 0x78 || bytes[bytes.length - 1] !== 0xff) return null;
+  const headOk = (bytes[0] === 0x51 && bytes[1] === 0x78) || (bytes[0] === 0x22 && bytes[1] === 0x21);
+  if (!headOk || bytes[bytes.length - 1] !== 0xff) return null;
   const len = bytes[4] | (bytes[5] << 8);
   if (bytes.length < 6 + len + 2) return null;
   const payload = bytes.slice(6, 6 + len);
@@ -82,6 +111,17 @@ export function stateToText(flags) {
   if (flags & STATE.lowBattery) parts.push('batterie faible');
   if (flags & STATE.busy) parts.push('impression en cours');
   return parts.length ? parts.join(', ') : 'OK';
+}
+
+export function mxwStatusToText(p) {
+  if (!p || !p.length) return 'réponse vide';
+  const parts = [];
+  parts.push(MXW_STATE[p[0]] || `état ${p[0]}`);
+  if (p.length > 3) parts.push(`batterie ${p[3]}%`);
+  if (p.length > 4) parts.push(`tête ${p[4]}°C`);
+  if (p.length > 6 && p[6] !== 0) parts.push(`ERREUR : ${MXW_ERROR[p[7]] || `code ${p[7]}`}`);
+  else parts.push('OK');
+  return parts.join(', ');
 }
 
 export function hex(bytes) {

@@ -1,12 +1,20 @@
 import {
   SERVICE_UUID,
-  CMD,
+  CHAR_WRITE_UUID,
+  CHAR_NOTIFY_UUID,
+  CHAR_DATA_UUID,
+  LINE_BYTES,
+  HEADER_CAT,
+  HEADER_MXW,
+  CAT,
+  MXW,
   LATTICE_START,
   LATTICE_END,
   STATE,
   buildPacket,
   parsePacket,
   stateToText,
+  mxwStatusToText,
   hex,
 } from './protocol.js';
 
@@ -17,14 +25,17 @@ export class CatPrinter {
     this.device = null;
     this.writeChar = null;
     this.notifyChar = null;
+    this.dataChar = null;
+    this.isMxw = false;
+    this.header = HEADER_CAT;
     this.paused = false;
     this.lastState = null;
     this.onLog = () => {};
     this.onState = () => {};
     this.onDisconnect = () => {};
     this._resumeWaiters = [];
-    this._stateSeq = 0;
     this._rx = new Uint8Array(0);
+    this._cmdWaiters = new Map();
   }
 
   get connected() {
@@ -41,6 +52,10 @@ export class CatPrinter {
     const channel = await this._findChannel(server);
     this.writeChar = channel.write;
     this.notifyChar = channel.notify;
+    this.dataChar = channel.data;
+    this.isMxw = !!this.dataChar;
+    this.header = this.isMxw ? HEADER_MXW : HEADER_CAT;
+    this.onLog(`protocole détecté : ${this.isMxw ? 'MXW01 (trames 22 21, données image sur AE03)' : 'cat classique (trames 51 78)'}`);
     if (this.notifyChar) {
       await this.notifyChar.startNotifications();
       this.notifyChar.addEventListener('characteristicvaluechanged', (e) => {
@@ -48,12 +63,17 @@ export class CatPrinter {
       });
     }
     this.onLog(`connecté à ${this.device.name || this.device.id}`);
-    if (this.notifyChar) {
-      await this.send(CMD.getInfo, Uint8Array.from([0x00]));
+    if (this.isMxw) {
+      await sleep(500);
+      await this._request(MXW.version, Uint8Array.from([0x00]), 2000);
+      await sleep(200);
+      await this.getState(2500);
+    } else {
+      await this.send(CAT.getInfo, Uint8Array.from([0x00]));
       await sleep(300);
-      await this.send(CMD.lineControl, Uint8Array.from([0x00]));
+      await this.send(CAT.lineControl, Uint8Array.from([0x00]));
       await sleep(100);
-      await this.send(CMD.getState, Uint8Array.from([0x00]));
+      await this.send(CAT.getState, Uint8Array.from([0x00]));
       await sleep(300);
     }
     return this.device;
@@ -100,9 +120,10 @@ export class CatPrinter {
       || chars.find((c) => c.properties.writeWithoutResponse || c.properties.write);
     const notify = chars.find((c) => c.uuid.includes('ae02') || c.uuid.includes('af02'))
       || chars.find((c) => c.properties.notify || c.properties.indicate);
-    this.onLog(`service=${service.uuid} write=${write ? write.uuid : 'AUCUN'} notify=${notify ? notify.uuid : 'AUCUN'}`);
+    const data = chars.find((c) => c.uuid.includes('ae03') || c.uuid.includes('af03'));
+    this.onLog(`service=${service.uuid} write=${write ? write.uuid : 'AUCUN'} notify=${notify ? notify.uuid : 'AUCUN'} data=${data ? data.uuid : '-'}`);
     if (!write) throw new Error('aucune caractéristique d\'écriture trouvée sur ce service');
-    return { write, notify };
+    return { write, notify, data };
   }
 
   disconnect() {
@@ -117,7 +138,9 @@ export class CatPrinter {
     buf.set(bytes, prev.length);
     let offset = 0;
     while (offset + 8 <= buf.length) {
-      if (buf[offset] === 0x51 && buf[offset + 1] === 0x78) {
+      const isCat = buf[offset] === 0x51 && buf[offset + 1] === 0x78;
+      const isMxw = buf[offset] === 0x22 && buf[offset + 1] === 0x21;
+      if (isCat || isMxw) {
         let end = -1;
         for (let i = offset + 6; i < buf.length; i++) {
           if (buf[i] === 0xff) { end = i; break; }
@@ -135,26 +158,62 @@ export class CatPrinter {
   _handlePacket(bytes) {
     const pkt = parsePacket(bytes);
     if (!pkt) return;
-    if (pkt.cmd === CMD.lineControl) {
-      const v = pkt.payload[0];
-      if (v === 0x10) {
-        this.paused = true;
-        this.onLog('pause : tampon de l\'imprimante plein');
-      } else if (v === 0x00) {
-        this.paused = false;
-        this._resumeWaiters.splice(0).forEach((r) => r());
-        this.onLog('reprise du flux');
+    if (this.isMxw) {
+      if (pkt.cmd === MXW.status) {
+        const text = mxwStatusToText(pkt.payload);
+        this.lastState = { text };
+        this.onState(0, text);
+      }
+      if (pkt.cmd === MXW.version) {
+        this.onLog(`version firmware : ${Array.from(pkt.payload).map((b) => (b >= 32 && b < 127 ? String.fromCharCode(b) : '.')).join('')}`);
+      }
+    } else {
+      if (pkt.cmd === CAT.lineControl) {
+        const v = pkt.payload[0];
+        if (v === 0x10) {
+          this.paused = true;
+          this.onLog('pause : tampon de l\'imprimante plein');
+        } else if (v === 0x00) {
+          this.paused = false;
+          this._resumeWaiters.splice(0).forEach((r) => r());
+          this.onLog('reprise du flux');
+        }
+      }
+      if (pkt.cmd === CAT.getState) {
+        const flags = pkt.payload[0] || 0;
+        const text = stateToText(flags);
+        this.lastState = { flags, text };
+        this.onState(flags, text);
       }
     }
-    if (pkt.cmd === CMD.getState) {
-      const flags = pkt.payload[0] || 0;
-      this.lastState = { flags, text: stateToText(flags) };
-      this._stateSeq += 1;
-      this.onState(flags, this.lastState.text);
+    const ws = this._cmdWaiters.get(pkt.cmd);
+    if (ws && ws.length) {
+      this._cmdWaiters.delete(pkt.cmd);
+      ws.forEach((r) => r(pkt));
     }
-    if (pkt.cmd === CMD.getInfo) {
-      this.onLog(`infos appareil : ${hex(pkt.payload)}`);
-    }
+  }
+
+  _waitCmd(cmd, timeoutMs) {
+    return new Promise((resolve) => {
+      const ws = this._cmdWaiters.get(cmd) || [];
+      ws.push(resolve);
+      this._cmdWaiters.set(cmd, ws);
+      setTimeout(() => {
+        const arr = this._cmdWaiters.get(cmd);
+        if (arr) {
+          const i = arr.indexOf(resolve);
+          if (i >= 0) arr.splice(i, 1);
+          if (!arr.length) this._cmdWaiters.delete(cmd);
+        }
+        resolve(null);
+      }, timeoutMs);
+    });
+  }
+
+  _request(cmd, payload, timeoutMs) {
+    const p = this._waitCmd(cmd, timeoutMs);
+    this.send(cmd, payload).catch(() => {});
+    return p;
   }
 
   async _waitIfPaused() {
@@ -163,70 +222,104 @@ export class CatPrinter {
     }
   }
 
-  async _write(bytes) {
+  async _writeTo(char, bytes) {
     await this._waitIfPaused();
     const CHUNK = 20;
     for (let i = 0; i < bytes.length; i += CHUNK) {
       const part = bytes.slice(i, i + CHUNK);
-      if (this.writeChar.properties.write) {
-        await this.writeChar.writeValue(part);
+      if (char.properties.write) {
+        await char.writeValue(part);
       } else {
-        await this.writeChar.writeValueWithoutResponse(part);
+        await char.writeValueWithoutResponse(part);
       }
-      if (i + CHUNK < bytes.length) await sleep(15);
+      if (i + CHUNK < bytes.length) await sleep(12);
     }
   }
 
   async send(cmd, payload) {
     if (!this.connected) throw new Error('imprimante non connectée');
-    const pkt = buildPacket(cmd, payload);
+    const pkt = buildPacket(cmd, payload, this.header);
     this.onLog(`envoi ${hex(pkt)}`);
-    await this._write(pkt);
+    await this._writeTo(this.writeChar, pkt);
   }
 
   async getState(timeoutMs = 3000) {
-    const before = this._stateSeq;
-    await this.send(CMD.getState, Uint8Array.from([0x00]));
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      if (this._stateSeq > before) return this.lastState;
-      await sleep(50);
+    if (this.isMxw) {
+      const resp = await this._request(MXW.status, Uint8Array.from([0x00]), timeoutMs);
+      return resp ? { text: mxwStatusToText(resp.payload) } : null;
     }
-    return null;
+    const resp = await this._request(CAT.getState, Uint8Array.from([0x00]), timeoutMs);
+    if (!resp) return null;
+    const flags = resp.payload[0] || 0;
+    return { flags, text: stateToText(flags) };
   }
 
   async feed(steps = 50) {
-    await this.send(CMD.feed, Uint8Array.from([steps & 0xff]));
+    if (this.isMxw) {
+      await this.send(MXW.feed, Uint8Array.from([steps & 0xff, (steps >> 8) & 0xff]));
+    } else {
+      await this.send(CAT.feed, Uint8Array.from([steps & 0xff]));
+    }
   }
 
   async printLines(lines, opts = {}) {
     if (!this.connected) throw new Error('imprimante non connectée');
+    if (!lines.length) throw new Error('rien à imprimer');
+    return this.isMxw ? this._printMxw(lines, opts) : this._printCat(lines, opts);
+  }
+
+  async _printMxw(lines, opts) {
+    const energy = opts.energy ?? 0xc000;
+    const intensity = Math.max(0, Math.min(100, Math.round((energy / 65535) * 100)));
+    const feedLines = opts.feed ?? 50;
+    const st = await this.getState(2000);
+    this.onLog(`état avant impression : ${st ? st.text : 'inconnu (pas de réponse A1)'}`);
+    await this.send(MXW.intensity, Uint8Array.from([intensity]));
+    await sleep(100);
+    const height = lines.length;
+    const ackPromise = this._waitCmd(MXW.printRequest, 3000);
+    await this.send(MXW.printRequest, Uint8Array.from([height & 0xff, (height >> 8) & 0xff, 0x30, 0x00]));
+    const ack = await ackPromise;
+    this.onLog(`ack A9 : ${ack ? (ack.payload[0] === 0 ? 'OK (00)' : `refusé (${hex(ack.payload)})`) : 'aucune réponse (timeout)'}`);
+    if (ack && ack.payload[0] !== 0) throw new Error('l\'imprimante a refusé la demande d\'impression (A9)');
+    const data = new Uint8Array(lines.length * LINE_BYTES);
+    lines.forEach((l, i) => data.set(l, i * LINE_BYTES));
+    this.onLog(`envoi de ${data.length} octets de données image sur ${this.dataChar.uuid} (${lines.length} lignes de 48 octets)`);
+    await this._writeTo(this.dataChar, data);
+    await this.send(MXW.flush, Uint8Array.from([0x00]));
+    const done = await this._waitCmd(MXW.printComplete, 60000);
+    this.onLog(done ? 'impression terminée (AA reçu)' : 'pas de AA reçu — l\'impression a peut-être quand même réussi');
+    await sleep(300);
+    await this.send(MXW.feed, Uint8Array.from([feedLines & 0xff, (feedLines >> 8) & 0xff]));
+    return lines.length;
+  }
+
+  async _printCat(lines, opts) {
     const energy = opts.energy ?? 0xc000;
     const quality = opts.quality ?? 0x33;
     const feed = opts.feed ?? 50;
     const chunkLines = opts.chunkLines ?? 4;
     const chunkDelayMs = opts.chunkDelayMs ?? 40;
-    if (!lines.length) throw new Error('rien à imprimer');
     const state = await this.getState();
-    if (state && (state.flags & STATE.noPaper)) throw new Error('pas de papier ou capot ouvert');
-    await this.send(CMD.setQuality, Uint8Array.from([quality]));
+    if (state && state.flags & STATE.noPaper) throw new Error('pas de papier ou capot ouvert');
+    await this.send(CAT.setQuality, Uint8Array.from([quality]));
     await sleep(80);
-    await this.send(CMD.lattice, LATTICE_START);
+    await this.send(CAT.lattice, LATTICE_START);
     await sleep(80);
-    await this.send(CMD.setEnergy, Uint8Array.from([energy & 0xff, (energy >> 8) & 0xff]));
+    await this.send(CAT.setEnergy, Uint8Array.from([energy & 0xff, (energy >> 8) & 0xff]));
     await sleep(80);
-    await this.send(CMD.feedSpeed, Uint8Array.from([0x00]));
+    await this.send(CAT.feedSpeed, Uint8Array.from([0x00]));
     await sleep(80);
-    await this.send(CMD.drawMode, Uint8Array.from([0x00]));
+    await this.send(CAT.drawMode, Uint8Array.from([0x00]));
     await sleep(80);
     for (let i = 0; i < lines.length; i++) {
-      await this.send(CMD.drawLine, lines[i]);
+      await this.send(CAT.drawLine, lines[i]);
       if ((i + 1) % chunkLines === 0) await sleep(chunkDelayMs);
     }
     await sleep(150);
-    await this.send(CMD.lattice, LATTICE_END);
+    await this.send(CAT.lattice, LATTICE_END);
     await sleep(100);
-    await this.send(CMD.feed, Uint8Array.from([feed & 0xff]));
+    await this.send(CAT.feed, Uint8Array.from([feed & 0xff]));
     return lines.length;
   }
 }
