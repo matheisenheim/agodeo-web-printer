@@ -214,7 +214,7 @@ Affiche la version (`v2.0.0` en haut de page + dans le journal), branche les bou
 - `CRC8` = CRC-8 poly 0x07, init 0, calculé **sur le payload seul**
 - `FF` = terminateur — **sur les réponses du MXW01, le `FF` final est absent** (capture réelle : les notifications s'arrêtent après le CRC) ; le parser de l'app se base donc sur la longueur (`6 + len + 1`) et accepte le `FF` optionnel
 
-**Image** : 384 px de large = 48 octets par ligne, **LSB first** (bit 0 = pixel de gauche), **1 = noir**, 0 = blanc. Lignes contiguës, sans en-tête par ligne.
+**Image** : 384 px de large = 48 octets par ligne en 1 bpp (192 en 4 bpp), **LSB first** (bit 0 = pixel de gauche), **1 = noir**, 0 = blanc. En 4 bpp : 2 px/octet, **pixel pair (gauche) dans le demi-octet HAUT**, 15 = noir. Lignes contiguës, sans en-tête par ligne. Les données `AE03` sont envoyées **par ligne complète** (48/192 octets par write, 12 ms d'écart) — jamais par petits morceaux, sinon les lignes sont décalées. Les jobs de moins de **90 lignes sont paddés avec des lignes blanches** (4320 octets min en 1 bpp). Le `A9` déclare la hauteur réelle du contenu.
 
 ### Famille MXW01 — Agodeo / FunPrint (header `22 21`)
 

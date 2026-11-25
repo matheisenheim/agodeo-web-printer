@@ -121,8 +121,8 @@ export function bitmapFromCanvas(canvas, dither, mode) {
       const line = new Uint8Array(LINE_BYTES_4BPP);
       for (let x = 0; x < width; x++) {
         const v = 15 - Math.round((gray[y * width + x] / 255) * 15);
-        if (x % 2 === 0) line[x >> 1] |= v & 0x0f;
-        else line[x >> 1] |= (v & 0x0f) << 4;
+        if (x % 2 === 0) line[x >> 1] |= (v & 0x0f) << 4;
+        else line[x >> 1] |= v & 0x0f;
       }
       lines.push(line);
     }

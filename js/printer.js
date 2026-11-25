@@ -241,17 +241,16 @@ export class CatPrinter {
     }
   }
 
-  async _writeTo(char, bytes) {
+  async _writeTo(char, bytes, chunkSize = 20) {
     await this._waitIfPaused();
-    const CHUNK = 20;
-    for (let i = 0; i < bytes.length; i += CHUNK) {
-      const part = bytes.slice(i, i + CHUNK);
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const part = bytes.slice(i, i + chunkSize);
       if (char.properties.write) {
         await char.writeValue(part);
       } else {
         await char.writeValueWithoutResponse(part);
       }
-      if (i + CHUNK < bytes.length) await sleep(12);
+      if (i + chunkSize < bytes.length) await sleep(12);
     }
   }
 
@@ -346,10 +345,12 @@ export class CatPrinter {
     const ack = await ackPromise;
     this.onLog(`ack A9 : ${ack ? (ack.payload[0] === 0 ? 'OK (00)' : `refusé (${hex(ack.payload)})`) : 'aucune réponse (timeout)'}`);
     if (ack && ack.payload[0] !== 0) throw new Error('l\'imprimante a refusé la demande d\'impression (A9)');
-    const data = new Uint8Array(lines.length * bytesPerRow);
+    const MIN_ROWS = 90;
+    const totalRows = Math.max(lines.length, MIN_ROWS);
+    const data = new Uint8Array(totalRows * bytesPerRow);
     lines.forEach((l, i) => data.set(l, i * bytesPerRow));
-    this.onLog(`envoi de ${data.length} octets de données image sur ${this.dataChar.uuid} (${lines.length} lignes de ${bytesPerRow} octets, mode ${mode})`);
-    await this._writeTo(this.dataChar, data);
+    this.onLog(`envoi de ${data.length} octets de données image sur ${this.dataChar.uuid} (${lines.length} lignes de ${bytesPerRow} octets + padding -> ${totalRows} lignes, mode ${mode})`);
+    await this._writeTo(this.dataChar, data, bytesPerRow);
     await this.send(MXW.flush, Uint8Array.from([0x00]));
     const done = await this._waitCmd(MXW.printComplete, 60000);
     this.onLog(done ? 'impression terminée (AA reçu)' : 'pas de AA reçu — l\'impression a peut-être quand même réussi');
