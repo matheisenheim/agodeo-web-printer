@@ -52,15 +52,17 @@ export class CatPrinter {
     const channel = await this._findChannel(server);
     this.writeChar = channel.write;
     this.notifyChar = channel.notify;
+    this.notifyChars = channel.notifyChars;
     this.dataChar = channel.data;
     this.isMxw = !!this.dataChar;
     this.header = this.isMxw ? HEADER_MXW : HEADER_CAT;
     this.onLog(`protocole détecté : ${this.isMxw ? 'MXW01 (trames 22 21, données image sur AE03)' : 'cat classique (trames 51 78)'}`);
-    if (this.notifyChar) {
-      await this.notifyChar.startNotifications();
-      this.notifyChar.addEventListener('characteristicvaluechanged', (e) => {
+    for (const nc of this.notifyChars) {
+      await nc.startNotifications();
+      nc.addEventListener('characteristicvaluechanged', (e) => {
         this._onNotify(new Uint8Array(e.target.value.buffer, e.target.value.byteOffset, e.target.value.byteLength));
       });
+      this.onLog(`notifications activées sur ${nc.uuid}`);
     }
     this.onLog(`connecté à ${this.device.name || this.device.id}`);
     if (this.isMxw) {
@@ -118,12 +120,12 @@ export class CatPrinter {
     const chars = await service.getCharacteristics();
     const write = chars.find((c) => c.uuid.includes('ae01') || c.uuid.includes('af01'))
       || chars.find((c) => c.properties.writeWithoutResponse || c.properties.write);
-    const notify = chars.find((c) => c.uuid.includes('ae02') || c.uuid.includes('af02'))
-      || chars.find((c) => c.properties.notify || c.properties.indicate);
+    const notifyChars = chars.filter((c) => c.properties.notify || c.properties.indicate);
+    const notify = notifyChars.find((c) => c.uuid.includes('ae02') || c.uuid.includes('af02')) || notifyChars[0];
     const data = chars.find((c) => c.uuid.includes('ae03') || c.uuid.includes('af03'));
-    this.onLog(`service=${service.uuid} write=${write ? write.uuid : 'AUCUN'} notify=${notify ? notify.uuid : 'AUCUN'} data=${data ? data.uuid : '-'}`);
+    this.onLog(`service=${service.uuid} write=${write ? write.uuid : 'AUCUN'} notify=[${notifyChars.map((c) => c.uuid).join(', ')}] data=${data ? data.uuid : '-'}`);
     if (!write) throw new Error('aucune caractéristique d\'écriture trouvée sur ce service');
-    return { write, notify, data };
+    return { write, notify, notifyChars, data };
   }
 
   disconnect() {
@@ -158,6 +160,7 @@ export class CatPrinter {
   _handlePacket(bytes) {
     const pkt = parsePacket(bytes);
     if (!pkt) return;
+    this.onLog(`trame reçue : cmd=0x${pkt.cmd.toString(16).padStart(2, '0')} len=${pkt.len} crcOk=${pkt.crcOk}`);
     if (this.isMxw) {
       if (pkt.cmd === MXW.status) {
         const text = mxwStatusToText(pkt.payload);
@@ -245,7 +248,8 @@ export class CatPrinter {
 
   async getState(timeoutMs = 3000) {
     if (this.isMxw) {
-      const resp = await this._request(MXW.status, Uint8Array.from([0x00]), timeoutMs);
+      let resp = await this._request(MXW.status, Uint8Array.from([0x00]), 2500);
+      if (!resp) resp = await this._request(MXW.status, Uint8Array.from([0x00]), 2500);
       return resp ? { text: mxwStatusToText(resp.payload) } : null;
     }
     const resp = await this._request(CAT.getState, Uint8Array.from([0x00]), timeoutMs);
