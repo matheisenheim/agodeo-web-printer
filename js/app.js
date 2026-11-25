@@ -201,7 +201,7 @@ $('btnInfo').addEventListener('click', async () => {
     }
     const typeTxt = info.type === null ? '?' : `0x${info.type.toString(16)} (${info.type})`;
     const countTxt = info.count ? `0x${info.count.map((b) => b.toString(16).padStart(2, '0')).join(' ')}` : '?';
-    $('printerState').textContent = `Firmware : ${info.version || '?'} — type (B0) : ${typeTxt} — impressions (A7) : ${countTxt}`;
+    $('printerState').textContent = `Firmware : ${info.version || '?'} — type (B0) : ${typeTxt} — A7 (ID série) : ${countTxt}`;
   } catch (e) {
     $('printerState').textContent = `Erreur : ${e.message}`;
   }

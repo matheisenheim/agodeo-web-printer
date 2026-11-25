@@ -205,6 +205,15 @@ export class CatPrinter {
         this.onState(flags, text);
       }
     }
+    if (this.isMxw && pkt.cmd === 0xae) {
+      this.paused = true;
+      if (this._aeTimer) clearTimeout(this._aeTimer);
+      this._aeTimer = setTimeout(() => {
+        this.paused = false;
+        this._resumeWaiters.splice(0).forEach((r) => r());
+        this.onLog('reprise du flux (AE reçu, buffer vidé)');
+      }, 150);
+    }
     const ws = this._cmdWaiters.get(pkt.cmd);
     if (ws && ws.length) {
       this._cmdWaiters.delete(pkt.cmd);
@@ -271,7 +280,7 @@ export class CatPrinter {
       const countTxt = formatQueryCount(count ? count.payload : null);
       if (countTxt) {
         this.lastCount = count.payload;
-        text += ` — impressions (A7) : ${countTxt}`;
+        text += ` — A7 (ID série) : ${countTxt}`;
       }
       return { text };
     }
