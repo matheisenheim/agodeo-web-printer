@@ -44,7 +44,7 @@ printer.onDisconnect = () => {
 };
 
 function currentMode() {
-  return Number(val('printMode', '0'));
+  return Number(val('printMode', '1'));
 }
 
 function currentDither() {
