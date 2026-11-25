@@ -47,6 +47,7 @@
       <button id="tabImage" class="tab">Image</button>
       <button id="tabQr" class="tab">QR code</button>
       <button id="tabTemplate" class="tab">Modèles</button>
+      <button id="tabPhotobooth" class="tab">Photobooth</button>
     </div>
     <div id="paneText">
       <textarea id="textInput" rows="4">Bonjour ! Ceci est un test d'impression.</textarea>
@@ -73,6 +74,18 @@
       <select id="templateSelect"></select>
       <div id="templateFields"></div>
       <p class="hint">Cadres vectoriels thème thé (bas-relief, médaillon, branche). En mode « 16 niveaux de gris HD », le relief sort en dégradés réels.</p>
+    </div>
+    <div id="panePhotobooth" hidden>
+      <video id="cam" autoplay playsinline muted style="width:100%;max-width:384px;background:#000;border:1px solid #ccc"></video>
+      <div class="row">
+        <button id="btnCam">Démarrer la caméra</button>
+        <button id="btnCapture" disabled>Capturer</button>
+      </div>
+      <div class="row">
+        <label><input id="pbFrame" type="checkbox" checked> Cadre photobooth + date</label>
+        <input id="pbLabel" type="text" value="Souriez !" style="max-width:160px">
+      </div>
+      <p class="hint">La caméra exige HTTPS ou localhost (comme Web Bluetooth). « Capturer » fige la photo dans l'aperçu, puis « Imprimer » la sort. Conseillé : mode 16 niveaux de gris HD.</p>
     </div>
     <div class="row">
       <label>Énergie / densité <input id="energy" type="range" min="16384" max="65535" value="49152"></label>

@@ -18,6 +18,30 @@ export function sourceToCanvas(source) {
   if (source.kind === 'template') {
     return source.tpl.render(source.values || {}, PRINT_WIDTH);
   }
+  if (source.kind === 'photobooth') {
+    const photo = sourceToCanvas({ kind: 'image', bmp: source.bmp });
+    const headH = 66;
+    const canvas = document.createElement('canvas');
+    canvas.width = PRINT_WIDTH;
+    canvas.height = photo.height + headH + 14;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText(source.label || 'Souriez !', canvas.width / 2, 16);
+    ctx.font = '15px sans-serif';
+    ctx.fillText(new Date().toLocaleDateString('fr-FR'), canvas.width / 2, 44);
+    ctx.drawImage(photo, 0, headH + 8);
+    return canvas;
+  }
   if (source.kind === 'qr') {
     const qr = qrMatrix(source.text);
     const count = qr.getModuleCount();

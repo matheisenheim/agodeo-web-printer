@@ -1,4 +1,4 @@
-const CACHE = 'agodeo-web-printer-v2.4.0';
+const CACHE = 'agodeo-web-printer-v2.5.0';
 const ASSETS = [
   './',
   'index.html',
@@ -12,6 +12,7 @@ const ASSETS = [
   'js/image.js',
   'js/qr.js',
   'js/templates.js',
+  'js/photobooth.js',
   'vendor/qrcode.mjs',
   'vendor/qrcode_UTF8.mjs',
 ];

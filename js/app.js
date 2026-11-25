@@ -1,6 +1,7 @@
 import { CatPrinter } from './printer.js';
 import { textSource, imageSource, qrSource, renderSourceToLines, drawPreview } from './image.js';
 import { TEMPLATES, templateSource } from './templates.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 
 const $ = (id) => document.getElementById(id);
@@ -38,13 +39,16 @@ function currentMode() {
 }
 
 function currentDither() {
-  return currentSource && currentSource.kind === 'image' ? $('dither').checked : false;
+  if (!currentSource) return false;
+  if (currentSource.kind === 'image' || currentSource.kind === 'photobooth') return $('dither').checked;
+  return false;
 }
 
 function activeTab() {
   if ($('tabQr').classList.contains('active')) return 'qr';
   if ($('tabImage').classList.contains('active')) return 'image';
   if ($('tabTemplate').classList.contains('active')) return 'template';
+  if ($('tabPhotobooth').classList.contains('active')) return 'photobooth';
   return 'text';
 }
 
@@ -114,7 +118,7 @@ function refreshPreview() {
   }
   const lines = renderSourceToLines(currentSource, { mode: 0, dither: currentDither() });
   drawPreview($('preview'), lines);
-  $('btnPrint').disabled = !printer.connected || currentSource === null;
+  $('btnPrint').disabled = !printer.connected;
 }
 
 async function refreshState() {
@@ -240,12 +244,17 @@ $('btnFeed').addEventListener('click', async () => {
   }
 });
 
-const TABS = { Text: 'paneText', Image: 'paneImage', Qr: 'paneQr', Template: 'paneTemplate' };
+const TABS = { Text: 'paneText', Image: 'paneImage', Qr: 'paneQr', Template: 'paneTemplate', Photobooth: 'panePhotobooth' };
 
 function switchTab(tab) {
   for (const [name, pane] of Object.entries(TABS)) {
     $(`tab${name}`).classList.toggle('active', name === tab);
     $(pane).hidden = name !== tab;
+  }
+  if (tab !== 'Photobooth' && cameraRunning()) {
+    stopCamera($('cam'));
+    $('btnCam').textContent = 'Démarrer la caméra';
+    $('btnCapture').disabled = true;
   }
   refreshPreview();
 }
@@ -254,6 +263,40 @@ $('tabText').addEventListener('click', () => switchTab('Text'));
 $('tabImage').addEventListener('click', () => switchTab('Image'));
 $('tabQr').addEventListener('click', () => switchTab('Qr'));
 $('tabTemplate').addEventListener('click', () => switchTab('Template'));
+$('tabPhotobooth').addEventListener('click', () => switchTab('Photobooth'));
+
+$('btnCam').addEventListener('click', async () => {
+  try {
+    if (cameraRunning()) {
+      stopCamera($('cam'));
+      $('btnCam').textContent = 'Démarrer la caméra';
+      $('btnCapture').disabled = true;
+      return;
+    }
+    $('connStatus').textContent = 'Demande d\'accès à la caméra… (autorise-la dans le navigateur)';
+    await startCamera($('cam'));
+    $('btnCam').textContent = 'Arrêter la caméra';
+    $('btnCapture').disabled = false;
+    $('connStatus').textContent = 'Caméra active.';
+  } catch (e) {
+    $('connStatus').textContent = `Caméra : ${e.message}`;
+  }
+});
+
+$('btnCapture').addEventListener('click', async () => {
+  try {
+    const bmp = await captureFrame($('cam'));
+    currentSource = $('pbFrame').checked
+      ? { kind: 'photobooth', bmp, label: $('pbLabel').value }
+      : { kind: 'image', bmp };
+    refreshPreview();
+    $('printStatus').textContent = 'Photo capturée — « Imprimer » pour la sortir.';
+  } catch (e) {
+    $('printStatus').textContent = `Erreur capture : ${e.message}`;
+  }
+});
+
+window.addEventListener('beforeunload', () => stopCamera($('cam')));
 
 $('textInput').addEventListener('input', refreshPreview);
 $('fontSize').addEventListener('input', refreshPreview);

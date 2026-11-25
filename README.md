@@ -82,6 +82,10 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 3. **« État de l'imprimante »** : pour un MXW01 affiche état + batterie % + température de la tête + erreur éventuelle (pas de papier, surchauffe…).
 4. Onglet **Texte**, **Image**, **QR code** ou **Modèles**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large).
 
+### Photobooth
+
+Onglet **Photobooth** : aperçu webcam en direct (`getUserMedia`, exige HTTPS/localhost + autorisation caméra), bouton **Capturer** qui fige la photo dans l'aperçu (384 px de large), puis **Imprimer**. Option « cadre photobooth + date » : superpose un double filet, un texte (« Souriez ! ») et la date du jour au-dessus de la photo. Conseillé : mode **16 niveaux de gris HD** pour les photos. Un seul appareil BLE connecté à la fois (fermer FunPrint ailleurs).
+
 ### Modèles d'étiquettes (thème thé)
 
 L'onglet **Modèles** propose des cadres vectoriels dessinés sur le canvas (384 px) :
@@ -131,6 +135,7 @@ agodeo-web-printer/
 │   ├── image.js          rendu du contenu en bitmap : texte/image/QR/template -> canvas -> lignes 48/192 octets, aperçu
 │   ├── qr.js             source QR (matrice via vendor/qrcode)
 │   ├── templates.js      modèles d'étiquettes vectoriels thème thé (cadre bas-relief, médaillon, branche)
+│   ├── photobooth.js     caméra (getUserMedia), capture 384 px, arrêt propre du flux
 │   └── app.js            câblage de l'interface (onglets, reconnexion auto, SW, polling batterie, journal)
 └── README.md
 ```

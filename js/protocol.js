@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.4.0';
+export const APP_VERSION = '2.5.0';
 
 export const SERVICE_UUID = '0000ae30-0000-1000-8000-00805f9b34fb';
 export const CHAR_WRITE_UUID = '0000ae01-0000-1000-8000-00805f9b34fb';
