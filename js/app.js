@@ -49,6 +49,15 @@ function refreshPreview() {
   $('btnPrint').disabled = !printer.connected || currentSource === null;
 }
 
+async function refreshState() {
+  try {
+    const st = await printer.getState();
+    $('printerState').textContent = st ? `État : ${st.text}` : 'Pas de réponse d\'état — essaie quand même « Imprimer », l\'état est informatif.';
+  } catch (e) {
+    $('printerState').textContent = `Erreur : ${e.message}`;
+  }
+}
+
 $('btnConnect').addEventListener('click', async () => {
   try {
     $('connStatus').textContent = 'Choisis ton imprimante dans la liste…';
@@ -57,6 +66,7 @@ $('btnConnect').addEventListener('click', async () => {
     $('btnConnect').disabled = true;
     $('btnDisconnect').disabled = false;
     refreshPreview();
+    refreshState();
   } catch (e) {
     let msg = e.message;
     if (/disconnect|rejected|not connected|unavailable/i.test(msg)) {
@@ -68,14 +78,7 @@ $('btnConnect').addEventListener('click', async () => {
 
 $('btnDisconnect').addEventListener('click', () => printer.disconnect());
 
-$('btnState').addEventListener('click', async () => {
-  try {
-    const st = await printer.getState();
-    $('printerState').textContent = st ? `État : ${st.text}` : 'Pas de réponse d\'état — essaie quand même « Imprimer », l\'état est informatif.';
-  } catch (e) {
-    $('printerState').textContent = `Erreur : ${e.message}`;
-  }
-});
+$('btnState').addEventListener('click', refreshState);
 
 $('btnFeed').addEventListener('click', async () => {
   try {
