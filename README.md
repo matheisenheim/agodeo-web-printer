@@ -91,6 +91,8 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 
 Le **journal BLE** en bas affiche toutes les trames envoyées (`envoi …`) et reçues (`reçu …`) en hex — indispensable pour déboguer.
 
+**Sonde USB (WebUSB)** : les boutons « Autoriser un appareil USB… » et « Sonder l'USB » listent les périphériques USB vus (VID:PID, nom) via `navigator.usb` — utile pour vérifier si une autre imprimante expose un port de données USB (le MXW01 n'en expose pas : USB-C = charge seule). Sur téléphone Android, utiliser avec un adaptateur OTG. WebUSB exige Chrome/Edge en HTTPS ou localhost, comme Web Bluetooth.
+
 ---
 
 ## 4. Architecture du code

@@ -103,6 +103,35 @@ $('btnCancel').addEventListener('click', async () => {
   }
 });
 
+async function listUsb() {
+  if (!navigator.usb) {
+    $('connStatus').textContent = 'WebUSB non disponible : Chrome/Edge requis, en HTTPS ou localhost.';
+    return;
+  }
+  const devices = await navigator.usb.getDevices();
+  const txt = devices.length
+    ? devices.map((d) => `${d.productName || 'USB'} (VID:PID ${d.vendorId.toString(16)}:${d.productId.toString(16)}, ${d.manufacturerName || '?'})`).join(' | ')
+    : 'aucun périphérique USB autorisé';
+  $('connStatus').textContent = `USB : ${txt}`;
+  printer.onLog(`sonde USB : ${devices.length} périphérique(s)${devices.length ? ' — ' + txt : ''}`);
+}
+
+$('btnUsbProbe').addEventListener('click', listUsb);
+
+$('btnUsbPick').addEventListener('click', async () => {
+  if (!navigator.usb) {
+    $('connStatus').textContent = 'WebUSB non disponible : Chrome/Edge requis, en HTTPS ou localhost.';
+    return;
+  }
+  try {
+    const dev = await navigator.usb.requestDevice({ filters: [] });
+    printer.onLog(`USB choisi : ${dev.productName || '?'} (VID:PID ${dev.vendorId.toString(16)}:${dev.productId.toString(16)})`);
+    await listUsb();
+  } catch (e) {
+    $('connStatus').textContent = `USB : ${e.message}`;
+  }
+});
+
 $('btnFeed').addEventListener('click', async () => {
   try {
     await printer.feed(Number($('feedSteps').value) || 50);
