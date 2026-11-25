@@ -232,6 +232,8 @@ Affiche la version (`v2.0.0` en haut de page + dans le journal), branche les bou
 | `B0` | `00` | type d'impression |
 | `B1` | `00` | version firmware (chaîne UTF-8) |
 
+**Commandes `AE`, `B2`, `B3`** (testées via le labo, trames réelles) : `AE 00` et `B2 00` répondent par un simple accusé de réception (echo `22 21 <cmd> 00 01 00 00 00`) sans effet métier visible (`B2` provoquait brièvement l'état `03` = éjection) ; `B3 00` ne répondait pas. Ce sont vraisemblablement des commandes internes d'appairage/chiffrement — non utilisées par l'app.
+
 **Réponse statut `A1`** (payload) : `[0]` état (0 veille, 1 impression, 2 avance, 3 éjection), `[3]` batterie %, `[4]` température tête °C, `[6]` 0 = OK sinon erreur, `[7]` code erreur (0x01/0x09 = pas de papier, 0x04 = surchauffe, 0x08 = batterie faible). Trame réelle capturée (batterie 83 %, 15 °C, veille) : `22 21 a1 03 0a 00 00 00 00 53 0f 00 00 00 bb 00 b8 ff` — notez le 3ᵉ octet `03` (octet de direction variable sur les réponses) et l'octet `[8]` (`0xbb`) de signification inconnue. `AB` renvoie la batterie seule en 1 octet (ex. `53` = 83 %).
 
 **Séquence d'impression MXW01** (implémentée dans `_printMxw`) :

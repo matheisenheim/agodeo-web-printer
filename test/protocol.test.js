@@ -57,4 +57,8 @@ const abReelle = parsePacket(Uint8Array.from([0x22, 0x21, 0xab, 0x00, 0x01, 0x00
 assert.equal(abReelle.cmd, 0xab);
 assert.equal(abReelle.payload[0], 83, 'batterie AB reelle = 83');
 
+const ackAe = parsePacket(Uint8Array.from([0x22, 0x21, 0xae, 0x00, 0x01, 0x00, 0x00, 0x00, 0xff]));
+assert.equal(ackAe.cmd, 0xae, 'ack AE recu (commande interne, echo)');
+assert.deepEqual(Array.from(ackAe.payload), [0x00]);
+
 console.log(`tous les tests passent (app v${APP_VERSION}, QR ${qr.getModuleCount()}x${qr.getModuleCount()} modules, ${TEMPLATES.length} templates + page de test)`);
