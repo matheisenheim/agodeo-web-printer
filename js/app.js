@@ -117,9 +117,21 @@ $('btnPrint').addEventListener('click', async () => {
   }
 });
 
-if (!navigator.bluetooth) {
-  $('connStatus').textContent = 'Web Bluetooth non supporté par ce navigateur : utilise Chrome ou Edge.';
-  $('btnConnect').disabled = true;
-} else {
+function checkEnvironment() {
+  if (!window.isSecureContext) {
+    $('connStatus').textContent = 'Contexte non sécurisé : Web Bluetooth exige HTTPS ou une URL en http://localhost / http://127.0.0.1 (pas l\'IP du réseau).';
+    $('btnConnect').disabled = true;
+    return;
+  }
+  if (!navigator.bluetooth) {
+    $('connStatus').textContent = 'Web Bluetooth non supporté par ce navigateur : utilise une version récente de Chrome ou Edge (pas Firefox ni Safari).';
+    $('btnConnect').disabled = true;
+    return;
+  }
+  navigator.bluetooth.getAvailability().then((ok) => {
+    if (!ok) $('connStatus').textContent = 'Bluetooth éteint ou indisponible sur cet appareil : active-le, puis recharge la page.';
+  });
   refreshPreview();
 }
+
+checkEnvironment();
