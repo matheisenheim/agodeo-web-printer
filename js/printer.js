@@ -96,10 +96,12 @@ export class CatPrinter {
       this.onLog(`services BLE trouvés : ${services.map((s) => s.uuid).join(', ')}`);
     }
     const chars = await service.getCharacteristics();
-    const write = chars.find((c) => c.uuid.includes('ae01'))
+    const write = chars.find((c) => c.uuid.includes('ae01') || c.uuid.includes('af01'))
       || chars.find((c) => c.properties.writeWithoutResponse || c.properties.write);
-    const notify = chars.find((c) => c.uuid.includes('ae02'))
+    const notify = chars.find((c) => c.uuid.includes('ae02') || c.uuid.includes('af02'))
       || chars.find((c) => c.properties.notify || c.properties.indicate);
+    this.onLog(`service=${service.uuid} write=${write ? write.uuid : 'AUCUN'} notify=${notify ? notify.uuid : 'AUCUN'}`);
+    if (!write) throw new Error('aucune caractéristique d\'écriture trouvée sur ce service');
     return { write, notify };
   }
 
@@ -166,10 +168,10 @@ export class CatPrinter {
     const CHUNK = 20;
     for (let i = 0; i < bytes.length; i += CHUNK) {
       const part = bytes.slice(i, i + CHUNK);
-      if (this.writeChar.properties.writeWithoutResponse) {
-        await this.writeChar.writeValueWithoutResponse(part);
-      } else {
+      if (this.writeChar.properties.write) {
         await this.writeChar.writeValue(part);
+      } else {
+        await this.writeChar.writeValueWithoutResponse(part);
       }
       if (i + CHUNK < bytes.length) await sleep(15);
     }
