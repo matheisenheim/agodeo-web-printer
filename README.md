@@ -47,6 +47,16 @@ Puis ouvrir [http://localhost:8000](http://localhost:8000) dans **Chrome ou Edge
 
 Alternatives : `npx serve .`, ou VS Code → clic droit sur `index.html` → « Open with Live Server ».
 
+### Tester sur téléphone (Android)
+
+Sur téléphone, Web Bluetooth exige un **contexte sécurisé (HTTPS)** — `localhost` ne désigne pas le PC. Trois méthodes :
+
+1. **GitHub Pages (recommandé)** : activer Pages sur la branche `vibe/agodeo-web-printer-7ead01` (Settings → Pages), l'app est alors servie en HTTPS sur `https://matheisenheim.github.io/agodeo-web-printer/`
+2. **adb reverse** : téléphone branché en USB au PC (débogage USB activé) → `adb reverse tcp:8000 tcp:8000`, lancer `python -m http.server 8000` sur le PC, puis ouvrir `http://localhost:8000` dans Chrome Android (`localhost` = contexte sécurisé)
+3. **Flag Chrome Android** : `chrome://flags/#unsafely-treat-insecure-origin-as-secure` → saisir `http://<IP-du-PC>:8000`, ouvrir cette URL dans Chrome
+
+Puis, sur le téléphone : Chrome, Bluetooth activé, **autoriser l'autorisation Bluetooth pour le site** (cadenas → Autorisations → Bluetooth), fermer l'app FunPrint, allumer l'imprimante, cliquer « Connecter l'imprimante » et choisir MXW01 dans le sélecteur Android.
+
 ### Mettre à jour le code (nouvelles versions)
 
 Depuis le dossier du projet, sans modifier les fichiers toi-même :

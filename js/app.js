@@ -80,6 +80,29 @@ $('btnDisconnect').addEventListener('click', () => printer.disconnect());
 
 $('btnState').addEventListener('click', refreshState);
 
+$('btnInfo').addEventListener('click', async () => {
+  try {
+    const info = await printer.getInfo();
+    if (!info) {
+      $('printerState').textContent = 'Infos B0/B1 non disponibles sur ce modèle.';
+      return;
+    }
+    const typeTxt = info.type === null ? '?' : `0x${info.type.toString(16)} (${info.type})`;
+    $('printerState').textContent = `Firmware : ${info.version || '?'} — type d'impression (B0) : ${typeTxt}`;
+  } catch (e) {
+    $('printerState').textContent = `Erreur : ${e.message}`;
+  }
+});
+
+$('btnCancel').addEventListener('click', async () => {
+  try {
+    await printer.cancel();
+    $('printStatus').textContent = 'Annulation envoyée (AC).';
+  } catch (e) {
+    $('printStatus').textContent = `Erreur : ${e.message}`;
+  }
+});
+
 $('btnFeed').addEventListener('click', async () => {
   try {
     await printer.feed(Number($('feedSteps').value) || 50);

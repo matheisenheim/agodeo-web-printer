@@ -258,6 +258,24 @@ export class CatPrinter {
     return { flags, text: stateToText(flags) };
   }
 
+  async cancel() {
+    if (this.isMxw) {
+      await this.send(MXW.cancel, Uint8Array.from([0x00]));
+    } else {
+      this.onLog('annulation (AC) non documentée sur ce modèle cat classique');
+    }
+  }
+
+  async getInfo(timeoutMs = 2500) {
+    if (!this.isMxw) return null;
+    const v = await this._request(MXW.version, Uint8Array.from([0x00]), timeoutMs);
+    const t = await this._request(MXW.printType, Uint8Array.from([0x00]), timeoutMs);
+    return {
+      version: v && v.payload.length ? new TextDecoder().decode(v.payload).replace(/\0+$/, '') : null,
+      type: t && t.payload.length ? t.payload[0] : null,
+    };
+  }
+
   async feed(steps = 50) {
     if (this.isMxw) {
       await this.send(MXW.feed, Uint8Array.from([steps & 0xff, (steps >> 8) & 0xff]));
