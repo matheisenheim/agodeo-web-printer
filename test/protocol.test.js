@@ -11,6 +11,7 @@ import {
   mxwStatusToText,
 } from '../js/protocol.js';
 import { qrMatrix } from '../js/qr.js';
+import { TEMPLATES } from '../js/templates.js';
 
 assert.equal(crc8(Uint8Array.from([0x32])), 0x9e, 'CRC8(0x32) doit faire 0x9e');
 assert.equal(crc8(Uint8Array.from([0x00, 0x11, 0x25])), 0xb9, 'CRC8 capture reelle (wiki)');
@@ -38,4 +39,10 @@ assert.equal(qr.isDark(0, 0), true, 'finder haut-gauche noir');
 assert.equal(qr.isDark(0, qr.getModuleCount() - 1), true, 'finder haut-droite noir');
 assert.equal(qr.isDark(qr.getModuleCount() - 1, 0), true, 'finder bas-gauche noir');
 
-console.log(`tous les tests passent (app v${APP_VERSION}, QR ${qr.getModuleCount()}x${qr.getModuleCount()} modules)`);
+assert.ok(TEMPLATES.length >= 3, 'au moins 3 templates');
+for (const t of TEMPLATES) {
+  assert.equal(typeof t.render, 'function');
+  assert.ok(t.fields.some((f) => f.key === 'nom'), `template ${t.id} a un champ nom`);
+}
+
+console.log(`tous les tests passent (app v${APP_VERSION}, QR ${qr.getModuleCount()}x${qr.getModuleCount()} modules, ${TEMPLATES.length} templates)`);

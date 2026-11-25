@@ -57,6 +57,14 @@ input[type="number"] { width: 70px; border: 1px solid #ccc; border-radius: 6px; 
 .tabs { display: flex; gap: 8px; margin-bottom: 8px; }
 .tab { background: #e2e8f0; color: #1c1e21; }
 .tab.active { background: #2b6cb0; color: #fff; }
+#templateFields label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 4px 0;
+  font-size: 13px;
+}
+#templateFields input { flex: 1; }
 #preview {
   border: 1px solid #ccc;
   image-rendering: pixelated;

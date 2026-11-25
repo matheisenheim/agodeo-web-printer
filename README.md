@@ -80,7 +80,17 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 1. Allumer l'imprimante, charger un rouleau 57 mm, fermer FunPrint sur le téléphone.
 2. Cliquer **« Connecter l'imprimante »** (laisser le préfixe vide pour tout lister, ou taper `MXW01`), choisir l'imprimante dans le sélecteur du navigateur.
 3. **« État de l'imprimante »** : pour un MXW01 affiche état + batterie % + température de la tête + erreur éventuelle (pas de papier, surchauffe…).
-4. Onglet **Texte**, **Image** ou **QR code**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large).
+4. Onglet **Texte**, **Image**, **QR code** ou **Modèles**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large).
+
+### Modèles d'étiquettes (thème thé)
+
+L'onglet **Modèles** propose des cadres vectoriels dessinés sur le canvas (384 px) :
+
+- **Cadre bas-relief & feuilles** : double filet avec ombre portée, feuilles de thé dans les 4 coins, champs nom / origine-notes / poids, et **QR optionnel** (champ URL) en bas à droite
+- **Médaillon « sceau de thé »** : cercle double avec feuille centrale, nom en dessous
+- **Bandeau branche de thé** : branche feuillue en haut du cadre, nom centré
+
+En mode **4 bits / 16 gris (HD)**, l'ombre portée du cadre sort en vrais dégradés (bas-relief réel) ; en mode 1 bit, elle est seuillée/hachurée.
 5. Si un appareil a déjà été connecté, le bouton **« Reconnecter à … »** ré-établit la liaison en un clic (sans repasser par le sélecteur), grâce aux autorisations conservées par le navigateur (`localStorage` + `navigator.bluetooth.getDevices()`).
 6. Tant que l'imprimante est connectée, son **état est ré-interrogé toutes les 30 s** (`A1`) : batterie, température, erreurs — avec une alerte ⚠ sous 20 % de batterie.
 
@@ -118,8 +128,9 @@ agodeo-web-printer/
 │   ├── protocol.js       protocoles binaires purs (aucun DOM ni BLE) : trames, CRC8, commandes, décodage
 │   ├── printer.js        client BLE : connexion GATT (3 tentatives), reconnexion par id, détection du
 │   │                     protocole (AE03 => MXW01), notifications, polling d'état, séquences d'impression
-│   ├── image.js          rendu du contenu en bitmap : texte/image/QR -> canvas -> lignes 48/192 octets, aperçu
+│   ├── image.js          rendu du contenu en bitmap : texte/image/QR/template -> canvas -> lignes 48/192 octets, aperçu
 │   ├── qr.js             source QR (matrice via vendor/qrcode)
+│   ├── templates.js      modèles d'étiquettes vectoriels thème thé (cadre bas-relief, médaillon, branche)
 │   └── app.js            câblage de l'interface (onglets, reconnexion auto, SW, polling batterie, journal)
 └── README.md
 ```

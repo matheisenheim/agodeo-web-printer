@@ -15,6 +15,9 @@ export async function imageSource(file) {
 export function sourceToCanvas(source) {
   const canvas = document.createElement('canvas');
   canvas.width = PRINT_WIDTH;
+  if (source.kind === 'template') {
+    return source.tpl.render(source.values || {}, PRINT_WIDTH);
+  }
   if (source.kind === 'qr') {
     const qr = qrMatrix(source.text);
     const count = qr.getModuleCount();

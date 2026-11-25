@@ -1,5 +1,6 @@
 import { CatPrinter } from './printer.js';
 import { textSource, imageSource, qrSource, renderSourceToLines, drawPreview } from './image.js';
+import { TEMPLATES, templateSource } from './templates.js';
 import { APP_VERSION } from './protocol.js';
 
 const $ = (id) => document.getElementById(id);
@@ -43,7 +44,58 @@ function currentDither() {
 function activeTab() {
   if ($('tabQr').classList.contains('active')) return 'qr';
   if ($('tabImage').classList.contains('active')) return 'image';
+  if ($('tabTemplate').classList.contains('active')) return 'template';
   return 'text';
+}
+
+function currentTemplate() {
+  return TEMPLATES.find((t) => t.id === $('templateSelect').value) || TEMPLATES[0];
+}
+
+function collectTemplateValues() {
+  const tpl = currentTemplate();
+  const values = {};
+  const inputs = $('templateFields').querySelectorAll('input');
+  tpl.fields.forEach((f, i) => {
+    values[f.key] = inputs[i] ? inputs[i].value : f.def;
+  });
+  currentSource = templateSource(tpl, values);
+}
+
+function renderTemplateFields() {
+  const tpl = currentTemplate();
+  const div = $('templateFields');
+  div.innerHTML = '';
+  tpl.fields.forEach((f) => {
+    const lab = document.createElement('label');
+    lab.textContent = `${f.label} `;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = f.def;
+    inp.addEventListener('input', () => {
+      collectTemplateValues();
+      refreshPreview();
+    });
+    lab.appendChild(inp);
+    div.appendChild(lab);
+  });
+  collectTemplateValues();
+}
+
+function buildTemplateUI() {
+  const sel = $('templateSelect');
+  sel.innerHTML = '';
+  for (const t of TEMPLATES) {
+    const o = document.createElement('option');
+    o.value = t.id;
+    o.textContent = t.name;
+    sel.appendChild(o);
+  }
+  sel.addEventListener('change', () => {
+    renderTemplateFields();
+    refreshPreview();
+  });
+  renderTemplateFields();
 }
 
 function refreshPreview() {
@@ -52,6 +104,8 @@ function refreshPreview() {
     currentSource = textSource($('textInput').value, Number($('fontSize').value), $('fontFamily').value);
   } else if (tab === 'qr') {
     currentSource = qrSource($('qrText').value);
+  } else if (tab === 'template') {
+    collectTemplateValues();
   }
   if (!currentSource) {
     drawPreview($('preview'), []);
@@ -186,10 +240,12 @@ $('btnFeed').addEventListener('click', async () => {
   }
 });
 
+const TABS = { Text: 'paneText', Image: 'paneImage', Qr: 'paneQr', Template: 'paneTemplate' };
+
 function switchTab(tab) {
-  for (const t of ['Text', 'Image', 'Qr']) {
-    $(`tab${t}`).classList.toggle('active', t === tab);
-    $(`pane${t === 'Qr' ? 'Qr' : t}`).hidden = t !== tab;
+  for (const [name, pane] of Object.entries(TABS)) {
+    $(`tab${name}`).classList.toggle('active', name === tab);
+    $(pane).hidden = name !== tab;
   }
   refreshPreview();
 }
@@ -197,6 +253,7 @@ function switchTab(tab) {
 $('tabText').addEventListener('click', () => switchTab('Text'));
 $('tabImage').addEventListener('click', () => switchTab('Image'));
 $('tabQr').addEventListener('click', () => switchTab('Qr'));
+$('tabTemplate').addEventListener('click', () => switchTab('Template'));
 
 $('textInput').addEventListener('input', refreshPreview);
 $('fontSize').addEventListener('input', refreshPreview);
@@ -246,6 +303,7 @@ function checkEnvironment() {
     if (!ok) $('connStatus').textContent = 'Bluetooth éteint ou indisponible sur cet appareil : active-le, puis recharge la page.';
   });
   showReconnectButton();
+  buildTemplateUI();
   refreshPreview();
 }
 
