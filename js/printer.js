@@ -24,6 +24,7 @@ export class CatPrinter {
     this.onDisconnect = () => {};
     this._resumeWaiters = [];
     this._stateSeq = 0;
+    this._rx = new Uint8Array(0);
   }
 
   get connected() {
@@ -47,6 +48,14 @@ export class CatPrinter {
       });
     }
     this.onLog(`connecté à ${this.device.name || this.device.id}`);
+    if (this.notifyChar) {
+      await this.send(CMD.getInfo, Uint8Array.from([0x00]));
+      await sleep(300);
+      await this.send(CMD.lineControl, Uint8Array.from([0x00]));
+      await sleep(100);
+      await this.send(CMD.getState, Uint8Array.from([0x00]));
+      await sleep(300);
+    }
     return this.device;
   }
 
@@ -72,6 +81,28 @@ export class CatPrinter {
 
   _onNotify(bytes) {
     this.onLog(`reçu ${hex(bytes)}`);
+    const prev = this._rx || new Uint8Array(0);
+    const buf = new Uint8Array(prev.length + bytes.length);
+    buf.set(prev, 0);
+    buf.set(bytes, prev.length);
+    let offset = 0;
+    while (offset + 8 <= buf.length) {
+      if (buf[offset] === 0x51 && buf[offset + 1] === 0x78) {
+        let end = -1;
+        for (let i = offset + 6; i < buf.length; i++) {
+          if (buf[i] === 0xff) { end = i; break; }
+        }
+        if (end === -1) break;
+        this._handlePacket(buf.slice(offset, end + 1));
+        offset = end + 1;
+      } else {
+        offset++;
+      }
+    }
+    this._rx = buf.slice(offset);
+  }
+
+  _handlePacket(bytes) {
     const pkt = parsePacket(bytes);
     if (!pkt) return;
     if (pkt.cmd === CMD.lineControl) {
@@ -85,11 +116,14 @@ export class CatPrinter {
         this.onLog('reprise du flux');
       }
     }
-    if (pkt.cmd === CMD.getState && pkt.dir === 1) {
+    if (pkt.cmd === CMD.getState) {
       const flags = pkt.payload[0] || 0;
       this.lastState = { flags, text: stateToText(flags) };
       this._stateSeq += 1;
       this.onState(flags, this.lastState.text);
+    }
+    if (pkt.cmd === CMD.getInfo) {
+      this.onLog(`infos appareil : ${hex(pkt.payload)}`);
     }
   }
 
@@ -115,7 +149,7 @@ export class CatPrinter {
     await this._write(pkt);
   }
 
-  async getState(timeoutMs = 2000) {
+  async getState(timeoutMs = 3000) {
     const before = this._stateSeq;
     await this.send(CMD.getState, Uint8Array.from([0x00]));
     const deadline = Date.now() + timeoutMs;

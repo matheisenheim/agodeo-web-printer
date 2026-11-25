@@ -59,7 +59,7 @@ $('btnDisconnect').addEventListener('click', () => printer.disconnect());
 $('btnState').addEventListener('click', async () => {
   try {
     const st = await printer.getState();
-    $('printerState').textContent = st ? `État : ${st.text}` : 'Pas de réponse de l\'imprimante';
+    $('printerState').textContent = st ? `État : ${st.text}` : 'Pas de réponse d\'état (notifications AE02) — essaie quand même « Imprimer », l\'état est informatif.';
   } catch (e) {
     $('printerState').textContent = `Erreur : ${e.message}`;
   }
