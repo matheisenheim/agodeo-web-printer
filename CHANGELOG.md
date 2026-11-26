@@ -3,6 +3,15 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.1] — 2026-11-26
+- **Fix pose (exposureTime) / ISO / focus manuel / WB manuel** : ces réglages ne sont pris en compte par la caméra que si le mode correspondant est `manual` — déplacer le slider passe maintenant automatiquement le mode en `manual` (exposureTime/iso → `exposureMode`, focusDistance → `focusMode`, colorTemperature → `whiteBalanceMode`) et synchronise le sélecteur. Affichage de la pose adapté à l'unité réelle des capacités (s → affiché en ms si max < 10)
+
+## [3.2.0] — 2026-11-26
+- **Mode manuel ⚙️ dans l'onglet 📷 Photo** : panneau rétractable avec sliders construits dynamiquement depuis `getCapabilities()` (chaque réglage n'apparaît que s'il est supporté, borné min/max/step) : focus manuel (`focusDistance`), exposition EV (`exposureCompensation`), pose (`exposureTime`), ISO, balance des blancs (`colorTemperature` K), luminosité/contraste/saturation/netteté — appliqués en live via `applyConstraints({ advanced })`
+- Sélecteurs de **mode** focus / expo / balance des blancs (valeurs lues dans les capacités), **résolution** (640×480 → 4K selon capacités) et **FPS** (15/24/30/60) avec redémarrage de la caméra
+- Bouton **↺ Tout remettre en auto** (modes `continuous`, torch off, zoom au min, valeurs initiales restaurées depuis `getSettings()` au démarrage)
+- Nouveaux exports `photobooth.js` : `trackCaps()`, `trackSettings()`, `applyAdvanced()` ; `startCamera(video, deviceId, media)` accepte width/height/frameRate
+
 ## [3.1.4] — 2026-11-26
 - Auto-démarrage de la caméra **uniquement dans l'onglet 📷 Photo** ; en 🎞️ Photobooth, l'utilisateur doit appuyer lui-même sur « Démarrer la caméra »
 

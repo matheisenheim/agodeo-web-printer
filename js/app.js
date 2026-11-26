@@ -672,7 +672,7 @@ const manualSliders = {};
 const MANUAL_PARAMS = [
   { key: 'focusDistance', label: 'Focus manuel', fmt: (v) => v.toFixed(2) },
   { key: 'exposureCompensation', label: 'Exposition (EV)', fmt: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}` },
-  { key: 'exposureTime', label: 'Pose (ms)', fmt: (v) => v.toFixed(1) },
+  { key: 'exposureTime', label: 'Pose', fmt: (v) => v.toFixed(1) },
   { key: 'iso', label: 'ISO', fmt: (v) => String(Math.round(v)) },
   { key: 'colorTemperature', label: 'Blancs (K)', fmt: (v) => String(Math.round(v)) },
   { key: 'brightness', label: 'Luminosité', fmt: (v) => v.toFixed(1) },
@@ -680,6 +680,13 @@ const MANUAL_PARAMS = [
   { key: 'saturation', label: 'Saturation', fmt: (v) => v.toFixed(2) },
   { key: 'sharpness', label: 'Netteté', fmt: (v) => v.toFixed(2) },
 ];
+
+const MODE_FOR_PARAM = {
+  focusDistance: { sel: 'modeFocus', key: 'focusMode' },
+  exposureTime: { sel: 'modeExposure', key: 'exposureMode' },
+  iso: { sel: 'modeExposure', key: 'exposureMode' },
+  colorTemperature: { sel: 'modeWB', key: 'whiteBalanceMode' },
+};
 
 function fillModeSelect(sel, values, key) {
   sel.innerHTML = '';
@@ -741,6 +748,10 @@ function buildManualPanel() {
   for (const p of MANUAL_PARAMS) {
     const c = caps[p.key];
     if (!c || c.min === undefined || c.max === undefined) continue;
+    const fmt = p.key === 'exposureTime' && c.max < 10
+      ? (v) => `${(v * 1000).toFixed(0)} ms`
+      : p.fmt;
+    const modeFor = MODE_FOR_PARAM[p.key];
     const row = document.createElement('div');
     row.className = 'mrow';
     const lab = document.createElement('label');
@@ -753,16 +764,19 @@ function buildManualPanel() {
     inp.value = settings[p.key] !== undefined ? settings[p.key] : c.min;
     const val = document.createElement('span');
     val.className = 'mval';
-    val.textContent = p.fmt(Number(inp.value));
+    val.textContent = fmt(Number(inp.value));
     inp.addEventListener('input', async () => {
-      val.textContent = p.fmt(Number(inp.value));
-      await applyAdvanced({ [p.key]: Number(inp.value) });
+      const v = Number(inp.value);
+      val.textContent = fmt(v);
+      const extra = modeFor ? { [modeFor.key]: 'manual' } : {};
+      await applyAdvanced(Object.assign({ [p.key]: v }, extra));
+      if (modeFor) $(modeFor.sel).value = 'manual';
     });
     row.appendChild(lab);
     row.appendChild(inp);
     row.appendChild(val);
     rows.appendChild(row);
-    manualSliders[p.key] = { inp, val, fmt: p.fmt };
+    manualSliders[p.key] = { inp, val, fmt };
   }
   buildResFps(caps);
 }
