@@ -3,6 +3,10 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.19] — 2026-11-26
+- **Par défaut, la photo est une trame de l'aperçu live** : si aucun réglage manuel n'est modifié (et pose auto désactivée), 📸 capture directement une trame de la vidéo (`captureFrame`) — plus de flux dédié ni de `takePhoto()` dans ce cas. Le flux de capture dédié + `takePhoto()` n'est utilisé que quand des réglages manuels sont actifs (sliders/modes « dirty ») ou pose auto > 0
+- **« ↺ Auto » remet vraiment tout par défaut** : les flags dirty des sliders et des sélecteurs de mode sont effacés (et la pose auto est décochée) → la photo suivante redevient une trame de l'aperçu
+
 ## [3.2.18] — 2026-11-26
 - **Capteur de lumière ambiante (ALS) aussi utilisé pour la pose auto** : si le téléphone en a un, l'app lit le lux via `AmbientLightSensor` (Generic Sensor API, avec demande de permission `ambient-light-sensor`) et/ou l'événement `devicelight` (DeviceLightEvent, avec `requestPermission` sur iOS). La pose auto = **max(pose déduite de la luma caméra, pose déduite du lux ambiant)** — mapping log : 0 lx → pose max (8 s), ≥ 1000 lx → pose min. Le lux courant s'affiche à côté de la pose (« 3.20 s (42 lx) »). Sans capteur ALS, retombe sur la luma caméra seule
 

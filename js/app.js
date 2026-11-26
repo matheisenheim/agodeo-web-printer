@@ -852,6 +852,18 @@ $('btnManualReset').addEventListener('click', async () => {
       }
     }
   }
+  for (const k in manualSliders) if (manualSliders[k]) manualSliders[k].dirty = false;
+  for (const [id] of MODE_SELECTS) {
+    const sel = $(id);
+    if (sel) delete sel.dataset.dirty;
+  }
+  if (poseAutoOn) {
+    $('poseAutoLuma').checked = false;
+    poseAutoOn = false;
+    stopLumaSampler();
+    const ps = manualSliders.exposureTime;
+    if (ps) ps.inp.disabled = !ps.supported;
+  }
   buildManualPanel();
 });
 
@@ -1246,6 +1258,8 @@ $('btnShot').addEventListener('click', async () => {
       const autoExp = exposureSeconds(trackCaps(), trackSettings().exposureTime) || 1 / 30;
       const gain = Math.max(1, Math.min(8, realPose / autoExp));
       bmp = await accumulateLongExposure($('cam2'), realPose, isFrontCam(), 'none', 640, gain);
+    } else if (!Object.keys(obj).length) {
+      bmp = await captureFrame($('cam2'), undefined, isFrontCam(), 'none');
     } else {
       const variants = Object.keys(obj).length ? [[obj], []] : [[]];
       for (const [adv] of variants) {
