@@ -154,31 +154,69 @@ export async function setTorch(on) {
   }
 }
 
+export async function blobToStill(blob, width = PRINT_WIDTH, mirror = false, filter = 'none') {
+  const bmp = await createImageBitmap(blob);
+  const h = Math.max(1, Math.round((bmp.height * width) / bmp.width));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (filter && filter !== 'none' && 'filter' in ctx) ctx.filter = filter;
+  if (mirror) {
+    ctx.translate(width, 0);
+    ctx.scale(-1, 1);
+  }
+  ctx.drawImage(bmp, 0, 0, width, h);
+  if (bmp.close) bmp.close();
+  return createImageBitmap(canvas);
+}
+
 export async function captureStill(video, width = PRINT_WIDTH, mirror = false, filter = 'none') {
   const track = video.srcObject ? video.srcObject.getVideoTracks()[0] : null;
   if (track && typeof ImageCapture !== 'undefined') {
     try {
       const ic = new ImageCapture(track);
       const blob = await ic.takePhoto();
-      const bmp = await createImageBitmap(blob);
-      const h = Math.max(1, Math.round((bmp.height * width) / bmp.width));
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      if (filter && filter !== 'none' && 'filter' in ctx) ctx.filter = filter;
-      if (mirror) {
-        ctx.translate(width, 0);
-        ctx.scale(-1, 1);
-      }
-      ctx.drawImage(bmp, 0, 0, width, h);
-      if (bmp.close) bmp.close();
-      return await createImageBitmap(canvas);
+      return await blobToStill(blob, width, mirror, filter);
     } catch (e) {
       // repli sur la trame d'aperçu si takePhoto indisponible
     }
   }
   return captureFrame(video, width, mirror, filter);
+}
+
+export function stopStream(s) {
+  if (s) s.getTracks().forEach((t) => t.stop());
+}
+
+function idealOf(v, dflt) {
+  if (v === undefined || v === null) return dflt;
+  if (typeof v === 'object') return v.ideal || dflt;
+  return v;
+}
+
+export async function openCaptureStream({ deviceId, media = {}, advanced } = {}) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error('getUserMedia indisponible (HTTPS ou localhost requis)');
+  }
+  const video = Object.assign(
+    {
+      width: { ideal: idealOf(media.width, 1920) },
+      height: { ideal: idealOf(media.height, 1080) },
+      frameRate: { ideal: idealOf(media.frameRate, 30) },
+    },
+    deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' }
+  );
+  if (advanced && advanced.length) video.advanced = advanced;
+  return await navigator.mediaDevices.getUserMedia({ video, audio: false });
+}
+
+export async function captureBlobFromTrack(track) {
+  if (!track || typeof ImageCapture === 'undefined') {
+    throw new Error('ImageCapture indisponible pour ce track');
+  }
+  const ic = new ImageCapture(track);
+  return await ic.takePhoto();
 }
 
 export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, filter = 'none') {

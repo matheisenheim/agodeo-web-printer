@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, captureStill, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, captureStill, blobToStill, openCaptureStream, captureBlobFromTrack, stopStream, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 import { FILTERS } from './filters.js';
 
@@ -1016,8 +1016,7 @@ async function restorePose() {
   await applyAdvanced({ exposureTime: v });
 }
 
-async function applyManualNow() {
-  if (!camTabRunning) return;
+function collectDirtyConstraints() {
   const caps = trackCaps();
   const obj = {};
   for (const p of MANUAL_PARAMS) {
@@ -1032,24 +1031,51 @@ async function applyManualNow() {
     const sel = $(id);
     if (sel && !sel.disabled && sel.dataset.dirty && sel.value) obj[key] = sel.value;
   }
+  return obj;
+}
+
+async function applyManualNow() {
+  if (!camTabRunning) return;
+  const obj = collectDirtyConstraints();
   if (Object.keys(obj).length) await applyAdvanced(obj);
+}
+
+function exposureSeconds(caps, raw) {
+  if (raw === undefined || raw === null) return 0;
+  const c = caps && caps.exposureTime;
+  return c && c.max >= 10 ? raw / 1000 : raw;
 }
 
 function poseSeconds() {
   const s = manualSliders.exposureTime;
   if (!s || !s.dirty) return 0;
-  const c = trackCaps().exposureTime;
-  if (!c || c.min === undefined) return 0;
+  const caps = trackCaps();
+  if (!caps.exposureTime || caps.exposureTime.min === undefined) return 0;
   const applied = trackSettings().exposureTime;
   const v = applied !== undefined ? applied : Number(s.inp.value);
-  return c.max < 10 ? v : v / 1000;
+  return exposureSeconds(caps, v);
+}
+
+function startShotCountdown(pose) {
+  const el = $('shotCountdown');
+  const t0 = performance.now();
+  el.hidden = false;
+  el.textContent = pose.toFixed(1);
+  return setInterval(() => {
+    const remaining = pose - (performance.now() - t0) / 1000;
+    el.textContent = remaining > 0 ? remaining.toFixed(1) : '0.0';
+  }, 100);
 }
 
 $('btnShot').addEventListener('click', async () => {
   $('manualPanel').hidden = true;
   $('btnManual').classList.remove('on');
   let cdTimer = null;
+  let capStream = null;
   capturing = true;
+  const t0 = performance.now();
+  let bmp = null;
+  let realPose = 0;
   try {
     if (camTimerOn) {
       const cs = $('camStatus');
@@ -1058,38 +1084,51 @@ $('btnShot').addEventListener('click', async () => {
         await new Promise((r) => setTimeout(r, 1000));
       }
     }
-    await applyManualNow();
-    const pose = poseSeconds();
-    if (pose > 2) {
-      const el = $('shotCountdown');
-      let remaining = pose;
-      el.hidden = false;
-      el.textContent = remaining.toFixed(1);
-      cdTimer = setInterval(() => {
-        remaining -= 0.1;
-        if (remaining <= 0) {
-          clearInterval(cdTimer);
-          cdTimer = null;
-          el.hidden = true;
-        } else {
-          el.textContent = remaining.toFixed(1);
-        }
-      }, 100);
+    const obj = collectDirtyConstraints();
+    const variants = Object.keys(obj).length ? [[obj], []] : [[]];
+    for (const [adv] of variants) {
+      try {
+        capStream = await openCaptureStream({ deviceId: currentDeviceId(), media: camMedia(), advanced: adv });
+        const track = capStream.getVideoTracks()[0];
+        const caps = track.getCapabilities ? track.getCapabilities() : {};
+        const st = track.getSettings ? track.getSettings() : {};
+        realPose = exposureSeconds(caps, st.exposureTime !== undefined ? st.exposureTime : obj.exposureTime);
+        if (realPose > 2) cdTimer = startShotCountdown(realPose);
+        $('camStatus').textContent = realPose > 2 ? `Pose ${realPose.toFixed(1)} s…` : 'Capture en cours…';
+        const blob = await captureBlobFromTrack(track);
+        bmp = await blobToStill(blob, undefined, isFrontCam(), 'none');
+        break;
+      } catch (e) {
+        if (cdTimer) { clearInterval(cdTimer); cdTimer = null; }
+        $('shotCountdown').hidden = true;
+        stopStream(capStream);
+        capStream = null;
+        bmp = null;
+      }
     }
-    await new Promise((r) => setTimeout(r, 250));
-    $('camStatus').textContent = pose > 2 ? `Pose ${pose.toFixed(1)} s…` : 'Capture en cours…';
-    const bmp = await captureStill($('cam2'), undefined, isFrontCam(), 'none');
+    if (!bmp) {
+      await applyManualNow();
+      realPose = poseSeconds();
+      if (realPose > 2) cdTimer = startShotCountdown(realPose);
+      await new Promise((r) => setTimeout(r, 250));
+      $('camStatus').textContent = realPose > 2 ? `Pose ${realPose.toFixed(1)} s…` : 'Capture en cours…';
+      bmp = await captureStill($('cam2'), undefined, isFrontCam(), 'none');
+      await restorePose();
+    }
     lastShot = bmp;
-    await restorePose();
     const cv = $('shotCanvas');
     cv.width = bmp.width;
     cv.height = bmp.height;
     cv.getContext('2d').drawImage(bmp, 0, 0);
     $('shotPreview').hidden = false;
-    $('camStatus').textContent = 'Photo prise.';
+    const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+    $('camStatus').textContent = realPose > 2
+      ? `Photo prise en ${elapsed} s (pose appliquée ${realPose.toFixed(1)} s).`
+      : 'Photo prise.';
   } catch (e) {
     notify(`❌ Photo : ${e.message}`);
   } finally {
+    if (capStream) stopStream(capStream);
     capturing = false;
     const dot = $('centerDot');
     if (dot) dot.style.transform = '';
