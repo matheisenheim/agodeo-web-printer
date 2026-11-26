@@ -3,6 +3,13 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.18] — 2026-11-26
+- **Stickers (Noël/Festif/Anniversaire/Nature/Animaux) retirés du carousel** — ils seront refaits **un par un**, cette fois avec des visuels trouvés sur Internet et embarqués en local : **Twemoji** (jdecked/twemoji, graphismes **CC-BY 4.0**, SVG officiels téléchargeables dans `vendor/`) ou chargés via jsDelivr. Le mécanisme overlay (canvas live + dessin dans la photo 384 px) reste en place. Le carousel ne contient plus que les 7 filtres couleur
+
+## [3.0.17] — 2026-11-26
+- **Overlays « stickers » dans le carousel de filtres** (nouveau module `js/filters.js`) : 🎄 Noël (bonnet + flocons animés + cadre rouge), 🎉 Festif (confettis + ballons + cadre doré), 🎂 Anniversaire (gâteau 2 étages + bougies + ballons), 🌿 Nature (feuilles + fleurs + cadre vert), 🐱 Animaux (oreilles de chat + moustaches)
+- Aperçu live via un canvas overlay animé (rAF) par-dessus la vidéo ; à la capture, l'overlay est **dessiné dans le canvas 384 px** (après le miroir, non filtré) → imprimé tel quel
+
 ## [3.0.16] — 2026-11-26
 - **Carousel de filtres** dans le photobooth : **balayer l'écran horizontalement** (tactile ou souris) sur la vidéo pour cycler entre Aucun / N&B / Sépia / Chaud / Froid / Contraste / Inversé (retour en boucle) ; un appui sur le libellé du filtre en haut au centre avance aussi d'un cran. Le filtre s'applique à l'aperçu (CSS) **et** à la photo imprimée (`ctx.filter` à la capture)
 
