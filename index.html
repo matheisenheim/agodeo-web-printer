@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Agodeo Web Printer</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -16,127 +16,141 @@
   <p class="hint">Web Bluetooth : Chrome ou Edge uniquement, en HTTPS ou sur localhost. Non disponible sur Safari / iOS / Firefox.</p>
 </header>
 <main>
-  <section class="panel">
-    <h2>1. Connexion</h2>
-    <div class="row">
-      <input id="namePrefix" type="text" placeholder="Préfixe du nom BLE (ex. MXW01), vide = tous les appareils">
-      <button id="btnConnect">Connecter l'imprimante</button>
-      <button id="btnDisconnect" disabled>Déconnecter</button>
-      <button id="btnReconnect" hidden>Reconnecter à <span id="reconnectLabel"></span></button>
+  <section id="view-printer" class="view active">
+    <div class="panel">
+      <h2>Connexion</h2>
+      <div class="row">
+        <input id="namePrefix" type="text" placeholder="Préfixe du nom BLE (ex. MXW01), vide = tous les appareils">
+        <button id="btnConnect">Connecter l'imprimante</button>
+        <button id="btnDisconnect" disabled>Déconnecter</button>
+        <button id="btnReconnect" hidden>Reconnecter à <span id="reconnectLabel"></span></button>
+      </div>
+      <div id="connStatus" class="status">Non connecté</div>
+      <div class="row">
+        <button id="btnState">État de l'imprimante</button>
+        <button id="btnInfo">Infos appareil (B0/B1/A7)</button>
+        <button id="btnCancel">Annuler l'impression</button>
+      </div>
+      <div class="row">
+        <button id="btnFeed">Avancer le papier</button>
+        <label>pas <input id="feedSteps" type="number" value="50" min="1" max="255"></label>
+        <label><input id="autoFeed" type="checkbox"> Avancer après chaque impression</label>
+      </div>
+      <div id="printerState" class="status"></div>
+      <div class="row">
+        <button id="btnUsbPick">Autoriser un appareil USB…</button>
+        <button id="btnUsbProbe">Sonder l'USB</button>
+      </div>
+      <p class="hint">Sonde USB : vérifie si une imprimante expose un port de données USB (le MXW01 non : USB-C = charge seule).</p>
     </div>
-    <div id="connStatus" class="status">Non connecté</div>
-    <div class="row">
-      <button id="btnState">État de l'imprimante</button>
-      <button id="btnInfo">Infos appareil (B0/B1)</button>
-      <button id="btnCancel">Annuler l'impression</button>
-      <button id="btnFeed">Avancer le papier</button>
-      <label>pas <input id="feedSteps" type="number" value="50" min="1" max="255"></label>
-      <label><input id="autoFeed" type="checkbox"> Avancer après chaque impression (désactivé par défaut)</label>
+
+    <div class="panel">
+      <h2>Labo protocole (commandes brutes)</h2>
+      <div class="row">
+        <input id="labCmd" type="text" placeholder="cmd hex (ex. ae)" style="max-width:90px">
+        <input id="labPayload" type="text" placeholder="payload hex (ex. 00)">
+        <button id="btnLabSend">Envoyer</button>
+      </div>
+      <div class="row">
+        <button class="lab-quick" data-cmd="a7" data-payload="00">A7 ID série</button>
+        <button class="lab-quick" data-cmd="ab" data-payload="00">AB batterie</button>
+        <button class="lab-quick" data-cmd="a4" data-payload="20 00">A4 retract 32</button>
+        <button class="lab-quick" data-cmd="b1" data-payload="00">B1 version</button>
+      </div>
+      <p class="hint">Envoie une trame brute sur AE01 ; réponses dans le journal BLE ci-dessous. Ne rien envoyer pendant une impression.</p>
     </div>
-    <div class="row">
-      <button id="btnUsbPick">Autoriser un appareil USB…</button>
-      <button id="btnUsbProbe">Sonder l'USB</button>
+
+    <div class="panel">
+      <h2>Journal BLE</h2>
+      <pre id="log"></pre>
     </div>
-    <p class="hint">Sonde USB (WebUSB) : utile pour vérifier si une imprimante expose un port de données USB (le MXW01 n'en a pas : USB-C = charge uniquement). Sur Android, utiliser avec un adaptateur OTG.</p>
-    <div id="printerState" class="status"></div>
   </section>
 
-  <section class="panel">
-    <h2>2. Contenu à imprimer</h2>
-    <div class="tabs">
-      <button id="tabText" class="tab active">Texte</button>
-      <button id="tabImage" class="tab">Image</button>
-      <button id="tabQr" class="tab">QR code</button>
-      <button id="tabTemplate" class="tab">Modèles</button>
-      <button id="tabPhotobooth" class="tab">Photobooth</button>
-    </div>
-    <div id="paneText">
-      <textarea id="textInput" rows="4">Bonjour ! Ceci est un test d'impression.</textarea>
+  <section id="view-content" class="view">
+    <div class="panel">
+      <h2>Contenu à imprimer</h2>
+      <div class="tabs">
+        <button id="tabText" class="tab active">Texte</button>
+        <button id="tabImage" class="tab">Image</button>
+        <button id="tabQr" class="tab">QR code</button>
+        <button id="tabTemplate" class="tab">Modèles</button>
+      </div>
+      <div id="paneText">
+        <textarea id="textInput" rows="4">Bonjour ! Ceci est un test d'impression.</textarea>
+        <div class="row">
+          <label>Taille <input id="fontSize" type="range" min="12" max="64" value="24"></label>
+          <label>Police
+            <select id="fontFamily">
+              <option value="sans-serif">Sans-serif</option>
+              <option value="serif">Serif</option>
+              <option value="monospace">Monospace</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div id="paneImage" hidden>
+        <input id="imageInput" type="file" accept="image/*">
+        <label><input id="dither" type="checkbox" checked> Dithering Floyd-Steinberg (photos)</label>
+      </div>
+      <div id="paneQr" hidden>
+        <input id="qrText" type="text" placeholder="Texte ou URL à encoder en QR code">
+        <p class="hint">QR généré localement (hors ligne), rempli au mieux sur 384 px.</p>
+      </div>
+      <div id="paneTemplate" hidden>
+        <select id="templateSelect"></select>
+        <div id="templateFields"></div>
+        <p class="hint">Cadres vectoriels thème thé. En mode HD, le relief sort en dégradés réels.</p>
+      </div>
       <div class="row">
-        <label>Taille <input id="fontSize" type="range" min="12" max="64" value="24"></label>
-        <label>Police
-          <select id="fontFamily">
-            <option value="sans-serif">Sans-serif</option>
-            <option value="serif">Serif</option>
-            <option value="monospace">Monospace</option>
+        <label>Énergie / densité <input id="energy" type="range" min="16384" max="65535" value="49152"></label>
+        <label>Mode
+          <select id="printMode">
+            <option value="1" selected>Mono 1 bit — éjection réduite (défaut)</option>
+            <option value="0">Mono 1 bit (rapide)</option>
+            <option value="2">16 niveaux de gris 4 bits — HD (plus lent, photos)</option>
           </select>
         </label>
       </div>
-    </div>
-    <div id="paneImage" hidden>
-      <input id="imageInput" type="file" accept="image/*">
-      <label><input id="dither" type="checkbox" checked> Dithering Floyd-Steinberg (photos)</label>
-    </div>
-    <div id="paneQr" hidden>
-      <input id="qrText" type="text" placeholder="Texte ou URL à encoder en QR code">
-      <p class="hint">Le QR est généré localement (hors ligne) et rempli au mieux les 384 px de large.</p>
-    </div>
-    <div id="paneTemplate" hidden>
-      <select id="templateSelect"></select>
-      <div id="templateFields"></div>
-      <p class="hint">Cadres vectoriels thème thé (bas-relief, médaillon, branche). En mode « 16 niveaux de gris HD », le relief sort en dégradés réels.</p>
-    </div>
-    <div id="panePhotobooth" hidden>
-      <div id="camWrap" style="position:relative;max-width:384px">
-        <video id="cam" autoplay playsinline muted class="mirrored" style="width:100%;background:#000;border:1px solid #ccc"></video>
-        <div id="countdown" hidden>3</div>
-      </div>
+      <p class="hint">DPI : fixe à ~203 dpi réels (384 points sur 57 mm) — non modifiable, c'est la tête d'impression.</p>
+      <h3>Aperçu (384 px)</h3>
+      <canvas id="preview" width="384"></canvas>
       <div class="row">
+        <button id="btnPrint" disabled>Imprimer</button>
+        <button id="btnTestCard">Page de test</button>
+      </div>
+      <div id="printStatus" class="status"></div>
+    </div>
+  </section>
+
+  <section id="view-booth" class="view">
+    <div id="camWrap">
+      <video id="cam" autoplay playsinline muted class="mirrored"></video>
+      <div id="countdown" hidden>3</div>
+    </div>
+    <div class="booth-controls">
+      <div class="row">
+        <select id="camSelect" title="Caméra"></select>
         <button id="btnCam">Démarrer la caméra</button>
-        <button id="btnCapture" disabled>Capturer</button>
       </div>
       <div class="row">
-        <label><input id="pbFrame" type="checkbox" checked> Cadre photobooth + date</label>
-        <input id="pbLabel" type="text" value="Souriez !" style="max-width:160px">
+        <button id="btnCapture" disabled>📸 Prendre la photo</button>
       </div>
       <div class="row">
-        <label><input id="pbMirror" type="checkbox" checked> Miroir (selfie)</label>
+        <label><input id="pbFrame" type="checkbox" checked> Cadre + date</label>
+        <input id="pbLabel" type="text" value="Souriez !" style="max-width:150px">
+        <label><input id="pbMirror" type="checkbox" checked> Miroir</label>
         <label><input id="pbTimer" type="checkbox" checked> Minuteur 3-2-1</label>
       </div>
-      <p class="hint">La caméra exige HTTPS ou localhost (comme Web Bluetooth). « Capturer » fige la photo dans l'aperçu, puis « Imprimer » la sort. Conseillé : mode 16 niveaux de gris HD.</p>
+      <div id="boothStatus" class="status"></div>
+      <p class="hint">« Prendre la photo » imprime directement si l'imprimante est connectée. Le mode HD est forcé dans cet onglet. Caméra : HTTPS/localhost requis.</p>
     </div>
-    <div class="row">
-      <label>Énergie / densité <input id="energy" type="range" min="16384" max="65535" value="49152"></label>
-      <label>Mode
-        <select id="printMode">
-          <option value="1" selected>Mono 1 bit — éjection réduite (défaut)</option>
-          <option value="0">Mono 1 bit (rapide)</option>
-          <option value="2">16 niveaux de gris 4 bits — HD (plus lent, photos)</option>
-        </select>
-      </label>
-    </div>
-    <p class="hint">DPI : fixe à 203 dpi (384 points sur 57 mm) — non modifiable, c'est la tête d'impression.</p>
-    <h3>Aperçu (384 px de large)</h3>
-    <canvas id="preview" width="384"></canvas>
-  </section>
-
-  <section class="panel">
-    <h2>3. Labo protocole (commandes brutes)</h2>
-    <div class="row">
-      <input id="labCmd" type="text" placeholder="cmd hex (ex. ae)" style="max-width:90px">
-      <input id="labPayload" type="text" placeholder="payload hex (ex. 00)">
-      <button id="btnLabSend">Envoyer</button>
-    </div>
-    <div class="row">
-      <button class="lab-quick" data-cmd="a7" data-payload="00">A7 compteur</button>
-      <button class="lab-quick" data-cmd="ab" data-payload="00">AB batterie</button>
-      <button class="lab-quick" data-cmd="a4" data-payload="20 00">A4 retract 32</button>
-      <button class="lab-quick" data-cmd="b1" data-payload="00">B1 version</button>
-    </div>
-    <p class="hint">Envoie une trame brute (header auto selon le protocole détecté) sur AE01. Les réponses arrivent dans le journal BLE. Ne rien envoyer pendant une impression ; si l'imprimante bloque, éteins-la/rallume-la.</p>
-  </section>
-
-  <section class="panel">
-    <h2>4. Impression</h2>
-    <div class="row">
-      <button id="btnPrint" disabled>Imprimer</button>
-      <button id="btnTestCard">Page de test</button>
-    </div>
-    <div id="printStatus" class="status"></div>
-    <h3>Journal BLE</h3>
-    <pre id="log"></pre>
   </section>
 </main>
+<nav id="tabbar">
+  <button class="tabbar-btn active" data-view="printer"><span class="ico">🖨️</span><span>Imprimante</span></button>
+  <button class="tabbar-btn" data-view="content"><span class="ico">✏️</span><span>Contenu</span></button>
+  <button class="tabbar-btn" data-view="booth"><span class="ico">📸</span><span>Photobooth</span></button>
+</nav>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>
