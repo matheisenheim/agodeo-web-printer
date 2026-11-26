@@ -233,8 +233,99 @@ input[type="number"] { width: 70px; border: 1px solid var(--line); border-radius
   border-radius: 8px;
   background: #fff;
 }
+#btnExitCam {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+#btnTorch2 {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 20px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
 #btnTorch2.on { background: #eab308; color: #3e2c20; border-color: #eab308; }
 #btnTorch2[hidden] { display: none; }
+
+/* Onglet Photo en plein écran (comme le photobooth) */
+body.camfs header, body.camfs #tabbar { display: none; }
+body.camfs main { padding: 0; }
+body.camfs #view-camera {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+body.camfs #camWrap2 {
+  flex: 1;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  display: flex;
+}
+body.camfs #cam2 { flex: 1; width: 100%; height: 100%; object-fit: cover; }
+body.camfs .cam-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
+  padding: 8px 14px calc(12px + env(safe-area-inset-bottom));
+}
+body.camfs .cam-zoom { justify-content: center; color: #fff; margin: 0 0 8px; }
+body.camfs .cam-zoom input[type="range"] { flex: 1; max-width: 320px; }
+body.camfs .cam-controls .booth-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+body.camfs .cam-controls .booth-left { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+body.camfs .cam-controls .booth-left button {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+body.camfs .cam-controls .booth-left button.on { background: var(--brand); border-color: var(--brand); }
+body.camfs #btnShot {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 38px;
+  flex: none;
+  background: var(--danger);
+  border: 3px solid rgba(255, 255, 255, 0.7);
+}
+body.camfs #camStatus { text-align: center; color: #f0dfc8; margin: 6px 0 0; }
+#shotPreview {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+}
+#shotPreview[hidden] { display: none; }
+#shotPreview .row { justify-content: center; }
+#shotCanvas { max-width: min(384px, 90vw); max-height: 60vh; }
 #focusRing {
   position: absolute;
   width: 64px;

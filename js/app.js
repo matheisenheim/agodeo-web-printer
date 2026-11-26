@@ -177,7 +177,7 @@ $('btnTorch').addEventListener('click', async () => {
 });
 
 function showView(name) {
-  if (name === 'booth' && currentView !== 'booth') prevView = currentView;
+  if ((name === 'booth' || name === 'camera') && currentView !== name) prevView = currentView;
   if (currentView === 'camera' && name !== 'camera') stopCamTab();
   currentView = name;
   document.querySelectorAll('.view').forEach((v) => {
@@ -188,6 +188,7 @@ function showView(name) {
   });
   const booth = name === 'booth';
   document.body.classList.toggle('booth', booth);
+  document.body.classList.toggle('camfs', name === 'camera');
   if (booth) {
     if (savedMode === null) savedMode = val('printMode', '1');
     $('printMode').value = '1';
@@ -212,6 +213,7 @@ document.querySelectorAll('.tabbar-btn').forEach((b) => {
 });
 
 $('btnExitBooth').addEventListener('click', () => showView(prevView || 'printer'));
+$('btnExitCam').addEventListener('click', () => showView(prevView || 'printer'));
 
 function updateFullscreenBtn() {
   const on = !!document.fullscreenElement;
@@ -729,13 +731,23 @@ $('zoomSlider').addEventListener('input', async () => {
   await setZoom(z);
 });
 
-$('camGrid').addEventListener('change', () => {
-  $('gridOverlay').hidden = !isChecked('camGrid', false);
+let camTimerOn = false;
+let camGridOn = false;
+
+$('btnTimer2').addEventListener('click', () => {
+  camTimerOn = !camTimerOn;
+  $('btnTimer2').classList.toggle('on', camTimerOn);
+});
+
+$('btnGrid2').addEventListener('click', () => {
+  camGridOn = !camGridOn;
+  $('btnGrid2').classList.toggle('on', camGridOn);
+  $('gridOverlay').hidden = !camGridOn;
 });
 
 $('btnShot').addEventListener('click', async () => {
   try {
-    if (isChecked('camTimer', false)) {
+    if (camTimerOn) {
       const cs = $('camStatus');
       for (let i = 3; i > 0; i--) {
         cs.textContent = `Minuteur : ${i}…`;
