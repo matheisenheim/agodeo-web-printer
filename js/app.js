@@ -4,6 +4,7 @@ import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
 import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
+import { FILTERS } from './filters.js';
 
 const $ = (id) => document.getElementById(id);
 function val(id, def = '') {
@@ -69,16 +70,34 @@ let cameras = [];
 let screenFlash = false;
 let wakeLock = null;
 
-const FILTERS = [
-  { name: 'Aucun', css: 'none' },
-  { name: 'N&B', css: 'grayscale(1)' },
-  { name: 'Sépia', css: 'sepia(0.85)' },
-  { name: 'Chaud', css: 'sepia(0.35) saturate(1.5) contrast(1.05)' },
-  { name: 'Froid', css: 'saturate(0.55) brightness(1.08) hue-rotate(160deg)' },
-  { name: 'Contraste', css: 'contrast(1.7) saturate(1.3)' },
-  { name: 'Inversé', css: 'invert(1) hue-rotate(180deg)' },
-];
 let filterIdx = 0;
+let overlayRAF = null;
+
+function overlayLoop(t) {
+  const cv = $('overlayCv');
+  const wrap = $('camWrap');
+  if (!cv || !wrap) return;
+  const w = wrap.clientWidth || 384;
+  const h = wrap.clientHeight || 300;
+  if (cv.width !== w) cv.width = w;
+  if (cv.height !== h) cv.height = h;
+  const c = cv.getContext('2d');
+  c.clearRect(0, 0, w, h);
+  const item = FILTERS[filterIdx];
+  if (cameraRunning() && item && item.draw) item.draw(c, w, h, t || 0);
+  overlayRAF = requestAnimationFrame(overlayLoop);
+}
+
+function startOverlayLoop() {
+  if (overlayRAF === null && typeof requestAnimationFrame === 'function') {
+    overlayRAF = requestAnimationFrame(overlayLoop);
+  }
+}
+
+function stopOverlayLoop() {
+  if (overlayRAF !== null && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(overlayRAF);
+  overlayRAF = null;
+}
 
 function applyFilter() {
   const f = FILTERS[filterIdx];
@@ -179,6 +198,7 @@ function showView(name) {
     $('printMode').value = '1';
     refreshCameras().catch(() => {});
     acquireWakeLock();
+    startOverlayLoop();
   } else {
     if (savedMode !== null) {
       $('printMode').value = savedMode;
@@ -189,6 +209,7 @@ function showView(name) {
     screenFlash = false;
     updateFlashButton();
     releaseWakeLock();
+    stopOverlayLoop();
     if (name === 'content') refreshPreview();
   }
 }
@@ -555,7 +576,7 @@ $('btnCapture').addEventListener('click', async () => {
     await countdown(3);
     let bmp;
     try {
-      bmp = await captureFrame($('cam'), undefined, true, FILTERS[filterIdx].css);
+      bmp = await captureFrame($('cam'), undefined, true, FILTERS[filterIdx].css, FILTERS[filterIdx].draw);
     } finally {
       setScreenFlash(false);
     }

@@ -73,7 +73,7 @@ export async function setTorch(on) {
   }
 }
 
-export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, filter = 'none') {
+export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, filter = 'none', overlayDraw = null) {
   const vw = video.videoWidth || width;
   const vh = video.videoHeight || Math.round((width * 3) / 4);
   const h = Math.max(1, Math.round((vh * width) / vw));
@@ -87,5 +87,10 @@ export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, f
     ctx.scale(-1, 1);
   }
   ctx.drawImage(video, 0, 0, width, h);
+  if (overlayDraw) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.filter = 'none';
+    overlayDraw(ctx, width, h, 0);
+  }
   return createImageBitmap(canvas);
 }
