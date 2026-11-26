@@ -3,6 +3,15 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.1.2] — 2026-11-26
+- **Caméra de dos par défaut** : `facingMode: 'environment'` au démarrage (repli sur 'user' si pas de caméra arrière, ex. PC) — dans le photobooth ET l'onglet Photo ; libellé 🔄 = **Dos** par défaut, miroir inactif par défaut
+- **Tap-to-focus aussi dans l'onglet 📷 Photo** : tap sur l'aperçu → `pointsOfInterest` (X inversé en Face) + carré jaune `#focusRing2`
+
+## [3.1.1] — 2026-11-26
+- **Onglet 📷 Photo en plein écran** (comme le photobooth) : `body.camfs` masque header/tabbar, vidéo en `object-fit: cover`, **✕ Quitter** en haut à droite (retour à l'onglet précédent), 🔦 flash en haut à gauche
+- Gros boutons utilisables : **📸 rond 96 px au centre en bas**, colonnes de boutons à gauche (Démarrer/Arrêter, 🔄 Face/Dos) et à droite (⏱️ minuteur 3 s et ▦ grille 3×3 en toggles), **slider de zoom en pleine largeur** au-dessus
+- Aperçu photo (télécharger/imprimer) en overlay centré plein écran
+
 ## [3.1.0] — 2026-11-26
 - **Nouvel onglet 📷 « Photo » (appareil photo)** : aperçu live, **zoom** (slider borné par `capabilities.zoom`, `applyConstraints({ advanced: [{ zoom }] })`), **flash 🔦** (torche si supportée), **switch caméra 🔄 Face/Dos**, **minuteur 3 s**, **grille 3×3**, tap-to-focus, miroir auto (Face seulement)
 - Capture → aperçu de la photo avec **💾 Télécharger** (PNG) ou **🖨️ Imprimer** directement

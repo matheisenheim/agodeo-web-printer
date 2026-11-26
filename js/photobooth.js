@@ -8,8 +8,19 @@ export async function startCamera(video, deviceId) {
   }
   const videoConstraints = deviceId
     ? { deviceId: { exact: deviceId } }
-    : { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } };
-  stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+    : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } };
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+  } catch (e) {
+    if (!deviceId && /facing|notfound|overconstrained|notreadable/i.test(`${e.name} ${e.message}`)) {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+    } else {
+      throw e;
+    }
+  }
   video.srcObject = stream;
   await video.play();
   return stream;

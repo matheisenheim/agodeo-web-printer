@@ -326,7 +326,7 @@ body.camfs #camStatus { text-align: center; color: #f0dfc8; margin: 6px 0 0; }
 #shotPreview[hidden] { display: none; }
 #shotPreview .row { justify-content: center; }
 #shotCanvas { max-width: min(384px, 90vw); max-height: 60vh; }
-#focusRing {
+#focusRing, #focusRing2 {
   position: absolute;
   width: 64px;
   height: 64px;
@@ -337,7 +337,7 @@ body.camfs #camStatus { text-align: center; color: #f0dfc8; margin: 6px 0 0; }
   pointer-events: none;
   z-index: 7;
 }
-#focusRing.show { animation: focusfade 0.9s ease-out; }
+#focusRing.show, #focusRing2.show { animation: focusfade 0.9s ease-out; }
 @keyframes focusfade {
   0% { opacity: 1; transform: scale(1.15); }
   100% { opacity: 0; transform: scale(0.9); }

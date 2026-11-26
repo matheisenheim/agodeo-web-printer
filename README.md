@@ -106,7 +106,7 @@ Pour découvrir `AE`, `B2`, `B3` (inconnues), 3 pistes :
 
 ### Appareil photo (📷 Photo)
 
-Onglet **Photo** pour utiliser l'app comme un vrai appareil photo : aperçu live, **📸 Prendre une photo** → aperçu avec **💾 Télécharger** (PNG) ou **🖨️ Imprimer** directement. Options classiques : **zoom** (slider borné par `capabilities.zoom`, `applyConstraints({ advanced: [{ zoom }] })`), **flash 🔦** (torche LED si supportée), **🔄 switch caméra Face/Dos**, **minuteur 3 s**, **grille 3×3**, **tap-to-focus** (`pointsOfInterest` + carré jaune), miroir auto en Face seulement. `focusMode: 'continuous'` demandé à chaque démarrage/switch. La caméra s'arrête en quittant l'onglet.
+Onglet **Photo** pour utiliser l'app comme un vrai appareil photo, **en plein écran comme le photobooth** : vidéo en cover, **✕ Quitter** en haut à droite, 🔦 flash en haut à gauche, **📸 gros rond au centre en bas**, colonnes de boutons à gauche (Démarrer/Arrêter, 🔄 Face/Dos) et à droite (⏱️ minuteur 3 s, ▦ grille 3×3 en toggles), **slider de zoom pleine largeur** au-dessus. **📸 Prendre une photo** → aperçu en overlay plein écran avec **💾 Télécharger** (PNG) ou **🖨️ Imprimer** directement. Options : **zoom** (borné par `capabilities.zoom`), **flash 🔦** (torche si supportée), **🔄 switch caméra**, **tap-to-focus** (`pointsOfInterest` + carré jaune), miroir auto en Face seulement, `focusMode: 'continuous'` à chaque démarrage/switch. **Caméra de dos (`environment`) par défaut** (repli sur la caméra avant si pas de dos). La caméra s'arrête en quittant l'onglet.
 
 ### Photobooth
 

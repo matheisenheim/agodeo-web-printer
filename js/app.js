@@ -91,10 +91,10 @@ $('camWrap').addEventListener('pointerdown', (e) => {
   swipeX = e.clientX;
   swipeY = e.clientY;
 });
-function showFocusRing(clientX, clientY) {
-  const r = $('focusRing');
+function showFocusRing(clientX, clientY, ringId = 'focusRing', wrapId = 'camWrap') {
+  const r = $(ringId);
   if (!r) return;
-  const rect = $('camWrap').getBoundingClientRect();
+  const rect = $(wrapId).getBoundingClientRect();
   r.style.left = `${clientX - rect.left}px`;
   r.style.top = `${clientY - rect.top}px`;
   r.classList.remove('show');
@@ -117,6 +117,26 @@ $('camWrap').addEventListener('pointerup', (e) => {
     const py = (e.clientY - rect.top) / rect.height;
     focusAt(isFrontCam() ? 1 - px : px, py);
     showFocusRing(e.clientX, e.clientY);
+  }
+});
+
+let tapX2 = null;
+let tapY2 = null;
+$('camWrap2').addEventListener('pointerdown', (e) => {
+  tapX2 = e.clientX;
+  tapY2 = e.clientY;
+});
+$('camWrap2').addEventListener('pointerup', (e) => {
+  if (tapX2 === null) return;
+  const dx = e.clientX - tapX2;
+  const dy = e.clientY - tapY2;
+  tapX2 = null;
+  if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && camTabRunning) {
+    const rect = $('camWrap2').getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    focusAt(isFrontCam() ? 1 - px : px, py);
+    showFocusRing(e.clientX, e.clientY, 'focusRing2', 'camWrap2');
   }
 });
 $('filterLabel').addEventListener('click', () => cycleFilter(1));
@@ -569,17 +589,17 @@ function updateCamSwitchLabel() {
   if (!b) return;
   const cam = cameras.find((c) => c.deviceId === selectedCamId);
   let txt = facingTextFor(cameraRunning() ? currentFacing() : null, (cam && cam.label) || '');
-  if (!txt && cameraRunning() && !selectedCamId) txt = 'Face';
+  if (!txt && cameraRunning() && !selectedCamId) txt = 'Dos';
   b.textContent = txt ? `🔄 ${txt}` : '🔄 Changer de caméra';
   applyMirror();
 }
 
 function isFrontCam() {
-  if (!cameraRunning()) return true;
+  if (!cameraRunning()) return false;
   const cam = cameras.find((c) => c.deviceId === selectedCamId);
   const txt = facingTextFor(currentFacing(), (cam && cam.label) || '');
   if (txt) return txt === 'Face';
-  return !selectedCamId;
+  return false;
 }
 
 function applyMirror() {
@@ -652,7 +672,7 @@ function camTabUI() {
   sw.disabled = cameras.length < 2;
   const cam = cameras.find((c) => c.deviceId === selectedCamId);
   let txt = facingTextFor(camTabRunning ? currentFacing() : null, (cam && cam.label) || '');
-  if (!txt && camTabRunning && !selectedCamId) txt = 'Face';
+  if (!txt && camTabRunning && !selectedCamId) txt = 'Dos';
   sw.textContent = txt ? `🔄 ${txt}` : '🔄 Changer de caméra';
   applyMirror();
 }
