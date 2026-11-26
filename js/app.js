@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, captureStill, blobToStill, openCaptureStream, captureBlobFromTrack, stopStream, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, captureStill, blobToStill, openCaptureStream, captureBlobFromTrack, applyAdvancedToTrack, waitAppliedExposure, stopStream, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 import { FILTERS } from './filters.js';
 
@@ -1091,8 +1091,15 @@ $('btnShot').addEventListener('click', async () => {
         capStream = await openCaptureStream({ deviceId: currentDeviceId(), media: camMedia(), advanced: adv });
         const track = capStream.getVideoTracks()[0];
         const caps = track.getCapabilities ? track.getCapabilities() : {};
-        const st = track.getSettings ? track.getSettings() : {};
-        realPose = exposureSeconds(caps, st.exposureTime !== undefined ? st.exposureTime : obj.exposureTime);
+        if (Object.keys(adv).length) await applyAdvancedToTrack(track, adv);
+        let rawApplied;
+        if (adv.exposureTime !== undefined) {
+          rawApplied = await waitAppliedExposure(track, adv.exposureTime);
+        } else {
+          const st = track.getSettings ? track.getSettings() : {};
+          rawApplied = st.exposureTime;
+        }
+        realPose = exposureSeconds(caps, rawApplied !== undefined ? rawApplied : adv.exposureTime);
         if (realPose > 2) cdTimer = startShotCountdown(realPose);
         $('camStatus').textContent = realPose > 2 ? `Pose ${realPose.toFixed(1)} s…` : 'Capture en cours…';
         const blob = await captureBlobFromTrack(track);

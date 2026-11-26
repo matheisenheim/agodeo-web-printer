@@ -219,6 +219,29 @@ export async function captureBlobFromTrack(track) {
   return await ic.takePhoto();
 }
 
+export async function applyAdvancedToTrack(track, obj) {
+  if (!track || !track.applyConstraints) return false;
+  try {
+    await track.applyConstraints({ advanced: [obj] });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+export async function waitAppliedExposure(track, target, timeoutMs = 2000) {
+  if (!track || target === undefined || target === null) return undefined;
+  const t0 = performance.now();
+  let last;
+  while (performance.now() - t0 < timeoutMs) {
+    const st = track.getSettings ? track.getSettings() : {};
+    last = st.exposureTime;
+    if (last !== undefined && Math.abs(last - target) <= Math.max(0.001, Math.abs(target) * 0.02)) return last;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return last;
+}
+
 export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, filter = 'none') {
   const vw = video.videoWidth || width;
   const vh = video.videoHeight || Math.round((width * 3) / 4);

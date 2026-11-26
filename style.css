@@ -288,6 +288,7 @@ body.camfs .cam-controls {
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 20;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
   padding: 8px 14px calc(12px + env(safe-area-inset-bottom));
 }

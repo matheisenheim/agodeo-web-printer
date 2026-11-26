@@ -3,6 +3,10 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.13] — 2026-11-26
+- **Fix pose longue < 1 s (onglet 📷)** : les contraintes `advanced` passées à `getUserMedia` sont ignorées/clampées par certains drivers — la pose est maintenant **aussi ré-appliquée sur le track du flux de capture** via `applyConstraints({ advanced })`, et l'app **attend que `getSettings().exposureTime` atteigne la valeur demandée** (jusqu'à 2 s) avant `takePhoto()` : une pose de 20 s bloque réellement la capture ~20 s (ou la valeur max du driver si elle cape). Le flux d'aperçu reste intact (visée live, jamais blanc)
+- **Fix z-index plein écran** : `.cam-controls` (menu manuel ⚙️ compris) passe en `z-index: 20`, au-dessus des overlays de la vidéo (guide ●, grille, compte à rebours) — quand le menu manuel et le guide sont affichés ensemble, le guide apparaît **derrière** le menu
+
 ## [3.2.12] — 2026-11-26
 - **Visée live pendant toute la prise de photo (onglet 📷)** : la capture passe par un **flux de capture dédié** (second `getUserMedia` sur la même caméra, réglages manuels — dont la pose — passés dans les contraintes initiales `advanced`), photo via `ImageCapture.takePhoto()` sur ce flux, flux fermé aussitôt. Le flux d'aperçu n'est **jamais** modifié par la pose : plus d'écran blanc pendant la pose longue, la visée reste en direct même si on bouge le téléphone pendant la capture, et le retour au live est instantané (plus de `restorePose` nécessaire sur le flux d'aperçu)
 - **Pose réellement appliquée** : les contraintes initiales du flux dédié sont le moyen le plus fiable d'obtenir une vraie pose longue (14 s demandés → capture ~14 s au lieu de ~4 s). La valeur réellement appliquée est relue dans `getSettings().exposureTime` du flux de capture : le compte à rebours défile sur la durée réelle et le statut affiche « Photo prise en X s (pose appliquée Y s) »
