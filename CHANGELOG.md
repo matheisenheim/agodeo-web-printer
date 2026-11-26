@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.27] — 2026-11-26
+- **Photobooth : 📸 bloqué pendant l'impression** — tant qu'une impression est en cours (`printBusy`), le bouton 📸 est désactivé (et le handler ignore le clic, même le minuteur 3-2-1 ne démarre pas) ; il est réactivé à la fin de l'impression (ou à l'arrêt de la caméra)
+
 ## [3.2.26] — 2026-11-26
 - **Compteur A7 en décimal dans l'onglet 🏠 Accueil** : le message de connexion affichait `impressions (A7) : 0x63 73 36 a9 4d b4` sans la valeur décimale → réutilise `formatQueryCount()` (`protocol.js`) : `0x63 73 36 a9 4d b4 (LE16=29539)`
 

@@ -541,6 +541,7 @@ async function printCurrent() {
   if (isImage) setImageBusy(true);
   try {
     $('btnPrint').disabled = true;
+    $('btnCapture').disabled = true;
     const mode = currentMode();
     const lines = renderSourceToLines(currentSource, { mode, dither: currentDither() });
     notify(`Impression de ${lines.length} lignes (mode ${mode === 2 ? '4 bits / 16 gris — HD' : '1 bit mono'})…`);
@@ -555,6 +556,7 @@ async function printCurrent() {
   } finally {
     printBusy = false;
     if (isImage) setImageBusy(false);
+    $('btnCapture').disabled = !cameraRunning();
     refreshPreview();
   }
 }
@@ -689,6 +691,7 @@ $('btnCam').addEventListener('click', async () => {
 });
 
 $('btnCapture').addEventListener('click', async () => {
+  if (printBusy) return;
   try {
     if (screenFlash) setScreenFlash(true);
     await countdown(3);
