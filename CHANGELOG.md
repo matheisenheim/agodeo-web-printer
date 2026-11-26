@@ -3,6 +3,10 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.19] — 2026-11-26
+- **4 premiers stickers Twemoji** (assets SVG officiels embarqués dans `vendor/twemoji/`, licence CC-BY 4.0) : 🎩 **Bonnet Noël** (🎅 `1f385` qui dépasse du haut), ❄️ **Neige** (cadre rouge + 🎄 `1f384` + flocons ❄️ `2744` animés), 🐱 **Chat** (🐱 `1f431` + moustaches), 🐶 **Chien** (🐶 `1f436` + moustaches + nez)
+- Préchargement des emoji (`preloadFilters()`) au démarrage et à l'entrée dans l'onglet ; SVG ajoutés à la liste `ASSETS` du service worker (PWA hors ligne OK)
+
 ## [3.0.18] — 2026-11-26
 - **Stickers (Noël/Festif/Anniversaire/Nature/Animaux) retirés du carousel** — ils seront refaits **un par un**, cette fois avec des visuels trouvés sur Internet et embarqués en local : **Twemoji** (jdecked/twemoji, graphismes **CC-BY 4.0**, SVG officiels téléchargeables dans `vendor/`) ou chargés via jsDelivr. Le mécanisme overlay (canvas live + dessin dans la photo 384 px) reste en place. Le carousel ne contient plus que les 7 filtres couleur
 

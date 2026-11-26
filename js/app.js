@@ -4,7 +4,7 @@ import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
 import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
-import { FILTERS } from './filters.js';
+import { FILTERS, preloadFilters } from './filters.js';
 
 const $ = (id) => document.getElementById(id);
 function val(id, def = '') {
@@ -198,6 +198,7 @@ function showView(name) {
     $('printMode').value = '1';
     refreshCameras().catch(() => {});
     acquireWakeLock();
+    preloadFilters();
     startOverlayLoop();
   } else {
     if (savedMode !== null) {
@@ -667,6 +668,7 @@ window.addEventListener('error', (e) => {
 
 checkEnvironment();
 applyFilter();
+preloadFilters();
 printer.onLog('app prête — si ce message manque, le JS n\'a pas charge correctement (vide le cache / Ctrl+F5)');
 
 if ('serviceWorker' in navigator) {
