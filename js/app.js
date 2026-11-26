@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 import { FILTERS } from './filters.js';
 
@@ -665,6 +665,162 @@ window.addEventListener('beforeunload', () => { stopCamera($('cam')); stopCamera
 // --- Onglet Appareil photo (📷 Photo) ---
 let camTabRunning = false;
 let lastShot = null;
+const camConstraints = { width: 1280, height: 720, frameRate: 30 };
+let initialSettings = null;
+const manualSliders = {};
+
+const MANUAL_PARAMS = [
+  { key: 'focusDistance', label: 'Focus manuel', fmt: (v) => v.toFixed(2) },
+  { key: 'exposureCompensation', label: 'Exposition (EV)', fmt: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}` },
+  { key: 'exposureTime', label: 'Pose (ms)', fmt: (v) => v.toFixed(1) },
+  { key: 'iso', label: 'ISO', fmt: (v) => String(Math.round(v)) },
+  { key: 'colorTemperature', label: 'Blancs (K)', fmt: (v) => String(Math.round(v)) },
+  { key: 'brightness', label: 'Luminosité', fmt: (v) => v.toFixed(1) },
+  { key: 'contrast', label: 'Contraste', fmt: (v) => v.toFixed(2) },
+  { key: 'saturation', label: 'Saturation', fmt: (v) => v.toFixed(2) },
+  { key: 'sharpness', label: 'Netteté', fmt: (v) => v.toFixed(2) },
+];
+
+function fillModeSelect(sel, values, key) {
+  sel.innerHTML = '';
+  if (!values || !values.length) {
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+  for (const v of values) {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = v;
+    sel.appendChild(o);
+  }
+  const cur = trackSettings()[key];
+  if (cur && values.includes(cur)) sel.value = cur;
+}
+
+function buildResFps(caps) {
+  const resSel = $('resSelect');
+  const fpsSel = $('fpsSelect');
+  resSel.innerHTML = '';
+  fpsSel.innerHTML = '';
+  const PRESETS = [[640, 480], [1280, 720], [1920, 1080], [2560, 1440], [3840, 2160]];
+  const w = caps.width;
+  const h = caps.height;
+  for (const [pw, ph] of PRESETS) {
+    if (w && (pw < w.min || pw > w.max)) continue;
+    if (h && (ph < h.min || ph > h.max)) continue;
+    const o = document.createElement('option');
+    o.value = `${pw}x${ph}`;
+    o.textContent = `${pw}×${ph}`;
+    if (pw === camConstraints.width && ph === camConstraints.height) o.selected = true;
+    resSel.appendChild(o);
+  }
+  if (!resSel.options.length) resSel.disabled = true;
+  const fr = caps.frameRate;
+  for (const f of [15, 24, 30, 60]) {
+    if (fr && (f < fr.min || f > fr.max)) continue;
+    const o = document.createElement('option');
+    o.value = String(f);
+    o.textContent = `${f} fps`;
+    if (f === camConstraints.frameRate) o.selected = true;
+    fpsSel.appendChild(o);
+  }
+  if (!fpsSel.options.length) fpsSel.disabled = true;
+}
+
+function buildManualPanel() {
+  if (!camTabRunning) return;
+  const caps = trackCaps();
+  fillModeSelect($('modeFocus'), caps.focusMode, 'focusMode');
+  fillModeSelect($('modeExposure'), caps.exposureMode, 'exposureMode');
+  fillModeSelect($('modeWB'), caps.whiteBalanceMode, 'whiteBalanceMode');
+  const rows = $('manualRows');
+  rows.innerHTML = '';
+  for (const k in manualSliders) delete manualSliders[k];
+  const settings = trackSettings();
+  for (const p of MANUAL_PARAMS) {
+    const c = caps[p.key];
+    if (!c || c.min === undefined || c.max === undefined) continue;
+    const row = document.createElement('div');
+    row.className = 'mrow';
+    const lab = document.createElement('label');
+    lab.textContent = p.label;
+    const inp = document.createElement('input');
+    inp.type = 'range';
+    inp.min = c.min;
+    inp.max = c.max;
+    inp.step = c.step || (c.max - c.min) / 100;
+    inp.value = settings[p.key] !== undefined ? settings[p.key] : c.min;
+    const val = document.createElement('span');
+    val.className = 'mval';
+    val.textContent = p.fmt(Number(inp.value));
+    inp.addEventListener('input', async () => {
+      val.textContent = p.fmt(Number(inp.value));
+      await applyAdvanced({ [p.key]: Number(inp.value) });
+    });
+    row.appendChild(lab);
+    row.appendChild(inp);
+    row.appendChild(val);
+    rows.appendChild(row);
+    manualSliders[p.key] = { inp, val, fmt: p.fmt };
+  }
+  buildResFps(caps);
+}
+
+for (const [id, key] of [['modeFocus', 'focusMode'], ['modeExposure', 'exposureMode'], ['modeWB', 'whiteBalanceMode']]) {
+  $(id).dataset.key = key;
+  $(id).addEventListener('change', async (e) => {
+    await applyAdvanced({ [e.target.dataset.key]: e.target.value });
+  });
+}
+
+$('btnManual').addEventListener('click', () => {
+  const p = $('manualPanel');
+  p.hidden = !p.hidden;
+  $('btnManual').classList.toggle('on', !p.hidden);
+  if (!p.hidden) buildManualPanel();
+});
+
+$('btnManualReset').addEventListener('click', async () => {
+  await applyAdvanced({ focusMode: 'continuous', exposureMode: 'continuous', whiteBalanceMode: 'continuous', torch: false });
+  const zc = zoomCaps();
+  const zmin = zc ? zc.min : 1;
+  await setZoom(zmin);
+  const zs = $('zoomSlider');
+  zs.value = zmin;
+  $('zoomVal').textContent = `${Number(zmin).toFixed(1)}×`;
+  if (initialSettings) {
+    for (const p of MANUAL_PARAMS) {
+      if (initialSettings[p.key] === undefined) continue;
+      await applyAdvanced({ [p.key]: initialSettings[p.key] });
+      const s = manualSliders[p.key];
+      if (s) {
+        s.inp.value = initialSettings[p.key];
+        s.val.textContent = s.fmt(initialSettings[p.key]);
+      }
+    }
+  }
+  buildManualPanel();
+});
+
+$('resSelect').addEventListener('change', async () => {
+  const [w, h] = val('resSelect').split('x').map(Number);
+  if (!w || !h) return;
+  camConstraints.width = w;
+  camConstraints.height = h;
+  if (camTabRunning) {
+    stopCamera($('cam2'));
+    await startCamTab();
+  }
+});
+
+$('fpsSelect').addEventListener('change', async () => {
+  camConstraints.frameRate = Number(val('fpsSelect'));
+  if (camTabRunning) {
+    stopCamera($('cam2'));
+    await startCamTab();
+  }
+});
 
 function camTabUI() {
   $('btnCam2').textContent = camTabRunning ? 'Arrêter la caméra' : 'Démarrer la caméra';
@@ -689,12 +845,22 @@ function stopCamTab() {
   $('camStatus').textContent = '';
 }
 
+function camMedia() {
+  return {
+    width: { ideal: camConstraints.width },
+    height: { ideal: camConstraints.height },
+    frameRate: { ideal: camConstraints.frameRate },
+  };
+}
+
 async function startCamTab() {
   try {
-    await startCamera($('cam2'), selectedCamId || undefined);
+    await startCamera($('cam2'), selectedCamId || undefined, camMedia());
     await setFocusMode('continuous');
     camTabRunning = true;
     await refreshCameras();
+    initialSettings = trackSettings();
+    buildManualPanel();
     const zc = zoomCaps();
     const zs = $('zoomSlider');
     if (zc) {
@@ -739,8 +905,10 @@ $('btnCamSwitch2').addEventListener('click', async () => {
   }
   stopCamera($('cam2'));
   try {
-    await startCamera($('cam2'), selectedCamId);
+    await startCamera($('cam2'), selectedCamId, camMedia());
     await setFocusMode('continuous');
+    initialSettings = trackSettings();
+    buildManualPanel();
     camTabUI();
   } catch (e) {
     notify(`❌ Caméra : ${e.message}`);

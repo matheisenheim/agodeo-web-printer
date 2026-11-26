@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.1.4] — 2026-11-26
+- Auto-démarrage de la caméra **uniquement dans l'onglet 📷 Photo** ; en 🎞️ Photobooth, l'utilisateur doit appuyer lui-même sur « Démarrer la caméra »
+
 ## [3.1.3] — 2026-11-26
 - **Caméra activée automatiquement** à l'entrée dans les onglets 🎞️ Photobooth et 📷 Photo (plus besoin de cliquer « Démarrer la caméra ») — `startBoothCamera()`/`startCamTab()` appelés depuis `showView`. Repli : si le navigateur bloque (1ʳᵉ autorisation à valider), popup ❌ invitant à appuyer sur le bouton
 

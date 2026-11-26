@@ -131,6 +131,21 @@
       <button id="btnExitCam" title="Quitter (retour à l'onglet précédent)">✕ Quitter</button>
     </div>
     <div class="cam-controls">
+      <div id="manualPanel" hidden>
+        <div class="row">
+          <label>Résolution <select id="resSelect"></select></label>
+          <label>FPS <select id="fpsSelect"></select></label>
+        </div>
+        <div class="row">
+          <label>Focus <select id="modeFocus"></select></label>
+          <label>Expo <select id="modeExposure"></select></label>
+          <label>WB <select id="modeWB"></select></label>
+        </div>
+        <div id="manualRows"></div>
+        <div class="row">
+          <button id="btnManualReset">↺ Tout remettre en auto</button>
+        </div>
+      </div>
       <div class="row cam-zoom">
         <span>🔍</span>
         <input id="zoomSlider" type="range" min="1" max="5" step="0.1" value="1">
@@ -145,6 +160,7 @@
         <div class="booth-left">
           <button id="btnTimer2" title="Minuteur 3 s">⏱️</button>
           <button id="btnGrid2" title="Grille 3×3">▦</button>
+          <button id="btnManual" title="Réglages manuels">⚙️</button>
         </div>
       </div>
       <div id="camStatus" class="status"></div>

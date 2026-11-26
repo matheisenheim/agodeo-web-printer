@@ -2,19 +2,20 @@ import { PRINT_WIDTH } from './protocol.js';
 
 let stream = null;
 
-export async function startCamera(video, deviceId) {
+export async function startCamera(video, deviceId, media = {}) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     throw new Error('caméra indisponible : getUserMedia exige HTTPS ou localhost');
   }
-  const videoConstraints = deviceId
+  const base = deviceId
     ? { deviceId: { exact: deviceId } }
-    : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } };
+    : { facingMode: 'environment' };
+  const videoConstraints = Object.assign({ width: { ideal: 1280 }, height: { ideal: 720 } }, base, media);
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
   } catch (e) {
     if (!deviceId && /facing|notfound|overconstrained|notreadable/i.test(`${e.name} ${e.message}`)) {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: Object.assign({ facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, media),
         audio: false,
       });
     } else {
@@ -24,6 +25,27 @@ export async function startCamera(video, deviceId) {
   video.srcObject = stream;
   await video.play();
   return stream;
+}
+
+export function trackCaps() {
+  const t = videoTrack();
+  return t && t.getCapabilities ? t.getCapabilities() : {};
+}
+
+export function trackSettings() {
+  const t = videoTrack();
+  return t && t.getSettings ? t.getSettings() : {};
+}
+
+export async function applyAdvanced(obj) {
+  const t = videoTrack();
+  if (!t || !t.applyConstraints) return false;
+  try {
+    await t.applyConstraints({ advanced: [obj] });
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 export async function listCameras() {
