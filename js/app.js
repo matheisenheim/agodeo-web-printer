@@ -694,6 +694,7 @@ const MODE_SELECTS = [['modeFocus', 'focusMode'], ['modeExposure', 'exposureMode
 
 function fillModeSelect(sel, values, key) {
   sel.innerHTML = '';
+  delete sel.dataset.dirty;
   if (!values || !values.length) {
     sel.disabled = true;
     return;
@@ -707,6 +708,8 @@ function fillModeSelect(sel, values, key) {
   }
   const cur = trackSettings()[key];
   if (cur && values.includes(cur)) sel.value = cur;
+  else if (values.includes('continuous')) sel.value = 'continuous';
+  else sel.value = values[0];
 }
 
 function buildResFps(caps) {
@@ -758,33 +761,39 @@ function buildManualPanel() {
       ? (c.max < 10 ? (v) => `${v.toFixed(3)} s` : (v) => `${(v / 1000).toFixed(3)} s`)
       : p.fmt;
     const modeFor = MODE_FOR_PARAM[p.key];
+    const supported = p.key !== 'exposureTime' || c.min < c.max;
     const row = document.createElement('div');
     row.className = 'mrow';
     const lab = document.createElement('label');
-    lab.textContent = p.label;
+    lab.textContent = supported ? p.label : `${p.label} (non supportée)`;
     const inp = document.createElement('input');
     inp.type = 'range';
     inp.min = c.min;
     inp.max = c.max;
     inp.step = c.step || (c.max - c.min) / 100;
     inp.value = settings[p.key] !== undefined ? settings[p.key] : c.min;
+    inp.disabled = !supported;
     const val = document.createElement('span');
     val.className = 'mval';
     val.textContent = fmt(Number(inp.value));
     inp.addEventListener('input', async () => {
       const v = Number(inp.value);
       val.textContent = fmt(v);
+      manualSliders[p.key].dirty = true;
       if (p.key === 'exposureTime') return;
       const extra = modeFor ? { [modeFor.key]: 'manual' } : {};
       await applyAdvanced(Object.assign({ [p.key]: v }, extra));
-      if (modeFor) $(modeFor.sel).value = 'manual';
+      if (modeFor) {
+        $(modeFor.sel).value = 'manual';
+        $(modeFor.sel).dataset.dirty = '1';
+      }
     });
     row.appendChild(lab);
     row.appendChild(inp);
     row.appendChild(val);
     const rows = $(MANUAL_GROUPS[p.group] || 'rowsImage');
     if (rows) rows.appendChild(row);
-    manualSliders[p.key] = { inp, val, fmt };
+    manualSliders[p.key] = { inp, val, fmt, dirty: false };
   }
   buildResFps(caps);
 }
@@ -792,6 +801,7 @@ function buildManualPanel() {
 for (const [id, key] of MODE_SELECTS) {
   $(id).dataset.key = key;
   $(id).addEventListener('change', async (e) => {
+    e.target.dataset.dirty = '1';
     await applyAdvanced({ [e.target.dataset.key]: e.target.value });
   });
 }
@@ -979,14 +989,14 @@ async function applyManualNow() {
   for (const p of MANUAL_PARAMS) {
     const s = manualSliders[p.key];
     const c = caps[p.key];
-    if (!s || !c || c.min === undefined) continue;
+    if (!s || !s.dirty || !c || c.min === undefined) continue;
     obj[p.key] = Number(s.inp.value);
     const modeFor = MODE_FOR_PARAM[p.key];
     if (modeFor) obj[modeFor.key] = 'manual';
   }
   for (const [id, key] of MODE_SELECTS) {
     const sel = $(id);
-    if (sel && !sel.disabled && sel.value) obj[key] = sel.value;
+    if (sel && !sel.disabled && sel.dataset.dirty && sel.value) obj[key] = sel.value;
   }
   if (Object.keys(obj).length) await applyAdvanced(obj);
 }
