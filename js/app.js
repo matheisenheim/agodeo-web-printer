@@ -672,7 +672,7 @@ const manualSliders = {};
 const MANUAL_PARAMS = [
   { key: 'focusDistance', label: 'Focus manuel', fmt: (v) => v.toFixed(2) },
   { key: 'exposureCompensation', label: 'Exposition (EV)', fmt: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}` },
-  { key: 'exposureTime', label: 'Pose', fmt: (v) => v.toFixed(1) },
+  { key: 'exposureTime', label: 'Pose (capture seule)', fmt: (v) => v.toFixed(1) },
   { key: 'iso', label: 'ISO', fmt: (v) => String(Math.round(v)) },
   { key: 'colorTemperature', label: 'Blancs (K)', fmt: (v) => String(Math.round(v)) },
   { key: 'brightness', label: 'Luminosité', fmt: (v) => v.toFixed(1) },
@@ -770,6 +770,7 @@ function buildManualPanel() {
     inp.addEventListener('input', async () => {
       const v = Number(inp.value);
       val.textContent = fmt(v);
+      if (p.key === 'exposureTime') return;
       const extra = modeFor ? { [modeFor.key]: 'manual' } : {};
       await applyAdvanced(Object.assign({ [p.key]: v }, extra));
       if (modeFor) $(modeFor.sel).value = 'manual';
@@ -958,6 +959,14 @@ $('btnGrid2').addEventListener('click', () => {
   $('gridOverlay').hidden = !camGridOn;
 });
 
+async function restorePose() {
+  const caps = trackCaps();
+  const c = caps.exposureTime;
+  if (!c || c.min === undefined) return;
+  const v = initialSettings && initialSettings.exposureTime !== undefined ? initialSettings.exposureTime : c.min;
+  await applyAdvanced({ exposureTime: v });
+}
+
 async function applyManualNow() {
   if (!camTabRunning) return;
   const caps = trackCaps();
@@ -990,6 +999,7 @@ $('btnShot').addEventListener('click', async () => {
     await new Promise((r) => setTimeout(r, 250));
     const bmp = await captureFrame($('cam2'), undefined, isFrontCam(), 'none');
     lastShot = bmp;
+    await restorePose();
     const cv = $('shotCanvas');
     cv.width = bmp.width;
     cv.height = bmp.height;

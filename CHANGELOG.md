@@ -3,6 +3,12 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.3] — 2026-11-26
+- **Pose (`exposureTime`) uniquement à la capture** : le slider de pose n'a plus aucun effet sur le flux live (il ne fait que mémoriser la valeur, libellé « Pose (capture seule) ») ; à chaque photo, `applyManualNow()` applique la pose (+ `exposureMode: manual`) 250 ms avant la capture, puis `restorePose()` remet la pose initiale juste après — tous les autres réglages (focus, EV, ISO, WB, image…) restent appliqués **en direct** sur l'aperçu
+
+## [3.2.2] — 2026-11-26
+- **Réglages manuels ré-appliqués au moment de la capture** : avant chaque photo (📷), `applyManualNow()` renvoie tous les sliders + modes (focus/expo/WB) via `applyConstraints`, puis une latence de 250 ms laisse le driver intégrer les réglages à la trame capturée — la photo reflète maintenant les réglages, pas seulement l'aperçu continu
+
 ## [3.2.1] — 2026-11-26
 - **Fix pose (exposureTime) / ISO / focus manuel / WB manuel** : ces réglages ne sont pris en compte par la caméra que si le mode correspondant est `manual` — déplacer le slider passe maintenant automatiquement le mode en `manual` (exposureTime/iso → `exposureMode`, focusDistance → `focusMode`, colorTemperature → `whiteBalanceMode`) et synchronise le sélecteur. Affichage de la pose adapté à l'unité réelle des capacités (s → affiché en ms si max < 10)
 
