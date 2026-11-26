@@ -167,7 +167,7 @@ input[type="number"] { width: 70px; border: 1px solid #ccc; border-radius: 6px; 
 #btnTorch.on { background: #eab308; color: #1c1e21; border-color: #eab308; }
 #btnTorch[hidden] { display: none; }
 #flashOverlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 40;
   background: #fff;

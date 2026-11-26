@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.15] — 2026-11-26
+- **Fix visibilité du compte à rebours pendant le flash écran** : l'overlay blanc était au niveau `body` (z-40) donc au-dessus de tout l'onglet photobooth (z-10) — les chiffres restaient cachés. L'overlay est déplacé dans `#camWrap` (même contexte d'empilement, z-40) : le compte à rebours (z-45, noir sur blanc via `body.flashing`) est maintenant bien visible par-dessus le blanc
+
 ## [3.0.14] — 2026-11-26
 - Flash écran (🖥️) : l'écran blanc s'allume désormais **pendant tout le minuteur 3-2-1 et jusqu'à la capture** (compte à rebours affiché en noir sur blanc), au lieu d'un éclair imperceptible à la capture. Comportement identique que l'imprimante soit connectée ou non — le flash ne dépend pas de l'imprimante
 
