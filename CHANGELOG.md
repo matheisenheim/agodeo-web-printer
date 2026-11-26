@@ -3,6 +3,13 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.22] — 2026-11-26
+- **Bouton ⛶ plein écran dans l'en-tête** (onglets Imprimante et Contenu uniquement — l'en-tête est masqué en Photobooth) : API Fullscreen (`requestFullscreen`/`exitFullscreen`), icône qui passe en 🗗 quand actif
+
+## [3.0.21] — 2026-11-26
+- **Refonte visuelle : palette chaude** (crème `#faf4ec`, terracotta `#c05f33`, chocolat `#5d3a26` pour header/tabbar, journal ambré) — variables CSS dans `style.css`, `theme-color` meta + manifest mis à jour
+- **Onglet Imprimante plus épuré** : colonne centrée 620 px, cartes arrondies à ombre douce, titres de section en petites capitales, boutons d'action (État / Infos / Annuler) en grille 3 colonnes, boutons USB et labo en style « ghost » (contour terracotta), statuts en pastilles
+
 ## [3.0.20] — 2026-11-26
 - **Stickers emoji retirés** (rendu non concluant) : suppression des 4 filtres overlay (Bonnet/Neige/Chat/Chien), du canvas d'aperçu overlay, du paramètre `overlayDraw` de `captureFrame`, et des assets `vendor/twemoji/` + entrées SW. Le carousel revient aux **7 filtres couleur** uniquement
 

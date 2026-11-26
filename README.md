@@ -13,6 +13,8 @@ L'interface est organisée en **3 onglets** (barre du bas) : **🖨️ Imprimant
 
 📜 **[CHANGELOG.md](CHANGELOG.md)** — historique de toutes les versions (le numéro en haut de l'app = dernière entrée du changelog).
 
+🎨 **Thème visuel** : palette chaude (crème / terracotta / chocolat) définie en variables CSS dans `style.css` — facile à personnaliser.
+
 ---
 
 ## 1. Compatibilité

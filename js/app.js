@@ -191,6 +191,30 @@ document.querySelectorAll('.tabbar-btn').forEach((b) => {
 
 $('btnExitBooth').addEventListener('click', () => showView(prevView || 'printer'));
 
+function updateFullscreenBtn() {
+  const on = !!document.fullscreenElement;
+  $('btnFullscreen').textContent = on ? '🗗' : '⛶';
+  $('btnFullscreen').classList.toggle('on', on);
+  $('btnFullscreen').title = on ? 'Quitter le plein écran' : 'Plein écran';
+}
+
+$('btnFullscreen').addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else {
+      await document.documentElement.requestFullscreen();
+    }
+  } catch (e) {
+    notify(`❌ Plein écran : ${e.message}`);
+  }
+});
+
+if (document.addEventListener) {
+  document.addEventListener('fullscreenchange', updateFullscreenBtn);
+}
+updateFullscreenBtn();
+
 const SUBTABS = { Text: 'paneText', Image: 'paneImage', Qr: 'paneQr', Template: 'paneTemplate' };
 
 function activeTab() {
