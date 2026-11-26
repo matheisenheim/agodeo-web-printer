@@ -92,6 +92,7 @@ if (document.addEventListener) {
 
 function setScreenFlash(on) {
   $('flashOverlay').hidden = !on;
+  document.body.classList.toggle('flashing', on);
 }
 
 function flashMode() {
@@ -511,8 +512,8 @@ $('btnCam').addEventListener('click', async () => {
 
 $('btnCapture').addEventListener('click', async () => {
   try {
-    await countdown(3);
     if (screenFlash) setScreenFlash(true);
+    await countdown(3);
     let bmp;
     try {
       bmp = await captureFrame($('cam'), undefined, true);

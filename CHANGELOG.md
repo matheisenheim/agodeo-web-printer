@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.14] — 2026-11-26
+- Flash écran (🖥️) : l'écran blanc s'allume désormais **pendant tout le minuteur 3-2-1 et jusqu'à la capture** (compte à rebours affiché en noir sur blanc), au lieu d'un éclair imperceptible à la capture. Comportement identique que l'imprimante soit connectée ou non — le flash ne dépend pas de l'imprimante
+
 ## [3.0.13] — 2026-11-26
 - **Un seul bouton flash** en haut à gauche : 🔦 torche LED si la caméra active la supporte, **sinon 🖥️ écran blanc** (plein blanc pendant le minuteur + capture) — ex. caméra Face sans flash. Le bouton est caché quand la caméra est arrêtée ; l'icône/état suivent le switch de caméra
 
