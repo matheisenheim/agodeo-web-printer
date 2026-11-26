@@ -283,7 +283,15 @@ export function testCardSource() {
 }
 
 export function renderTestCard(w, version) {
-  const h = 560;
+  const qr = qrMatrix('https://github.com/matheisenheim/agodeo-web-printer');
+  const count = qr.getModuleCount();
+  const cell = 3;
+  const side = (count + 8) * cell;
+  const textTop = 292;
+  const lineH = 18;
+  const nLines = 8;
+  const qy = textTop + nLines * lineH + 14;
+  const h = qy + side + 18;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
@@ -321,16 +329,12 @@ export function renderTestCard(w, version) {
   ctx.fillStyle = INK;
   ctx.font = 'bold 18px sans-serif';
   ctx.fillText('Niveaux de gris 0-15 (utile en mode HD)', w / 2, 248);
-  ctx.font = '13px monospace';
-  for (let i = 0; i < 8; i++) {
-    ctx.fillText(`ligne de texte ${i + 1} — 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ`, 24, 292 + i * 18);
+  ctx.textAlign = 'left';
+  ctx.font = '12px monospace';
+  for (let i = 0; i < nLines; i++) {
+    ctx.fillText(`ligne de texte ${i + 1} — 0123456789 ABCDEFGHIJKL`, 24, textTop + i * lineH);
   }
-  const qr = qrMatrix('https://github.com/matheisenheim/agodeo-web-printer');
-  const count = qr.getModuleCount();
-  const cell = 3;
-  const side = (count + 8) * cell;
   const qx = (w - side) / 2;
-  const qy = h - side - 24;
   ctx.fillStyle = PAPER;
   ctx.fillRect(qx, qy, side, side);
   ctx.strokeStyle = INK;
