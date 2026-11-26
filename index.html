@@ -126,6 +126,7 @@
       <video id="cam" autoplay playsinline muted class="mirrored"></video>
       <div id="countdown" hidden>3</div>
       <button id="btnTorch" hidden title="Flash / torche de la caméra (si supporté)">🔦</button>
+      <button id="btnScreenFlash" title="Flash écran : plein blanc pendant le minuteur et la capture">🖥️</button>
       <button id="btnExitBooth" title="Quitter le photobooth (retour à l'onglet précédent)">✕ Quitter</button>
     </div>
     <div class="booth-controls">
@@ -137,6 +138,7 @@
     </div>
   </section>
 </main>
+<div id="flashOverlay" hidden></div>
 <div id="popup" hidden>
   <div id="popupBox">
     <div id="popupMsg"></div>

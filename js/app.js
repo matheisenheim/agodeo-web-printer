@@ -66,6 +66,38 @@ let prevView = 'printer';
 let savedMode = null;
 let selectedCamId = null;
 let cameras = [];
+let screenFlash = false;
+let wakeLock = null;
+
+async function acquireWakeLock() {
+  try {
+    if (navigator.wakeLock && !wakeLock) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch (e) {}
+}
+
+async function releaseWakeLock() {
+  try {
+    if (wakeLock) await wakeLock.release();
+  } catch (e) {}
+  wakeLock = null;
+}
+
+if (document.addEventListener) {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && currentView === 'booth') acquireWakeLock();
+  });
+}
+
+function setScreenFlash(on) {
+  $('flashOverlay').hidden = !on;
+}
+
+$('btnScreenFlash').addEventListener('click', () => {
+  screenFlash = !screenFlash;
+  $('btnScreenFlash').classList.toggle('on', screenFlash);
+});
 
 function showView(name) {
   if (name === 'booth' && currentView !== 'booth') prevView = currentView;
@@ -82,12 +114,17 @@ function showView(name) {
     if (savedMode === null) savedMode = val('printMode', '1');
     $('printMode').value = '1';
     refreshCameras().catch(() => {});
+    acquireWakeLock();
   } else {
     if (savedMode !== null) {
       $('printMode').value = savedMode;
       savedMode = null;
     }
     if (cameraRunning()) stopBoothCamera();
+    setScreenFlash(false);
+    screenFlash = false;
+    $('btnScreenFlash').classList.remove('on');
+    releaseWakeLock();
     if (name === 'content') refreshPreview();
   }
 }
@@ -466,7 +503,13 @@ $('btnCam').addEventListener('click', async () => {
 $('btnCapture').addEventListener('click', async () => {
   try {
     await countdown(3);
-    const bmp = await captureFrame($('cam'), undefined, true);
+    if (screenFlash) setScreenFlash(true);
+    let bmp;
+    try {
+      bmp = await captureFrame($('cam'), undefined, true);
+    } finally {
+      setScreenFlash(false);
+    }
     currentSource = { kind: 'image', bmp };
     await printCurrent();
   } catch (e) {
