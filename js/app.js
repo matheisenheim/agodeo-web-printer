@@ -693,7 +693,7 @@ $('btnCapture').addEventListener('click', async () => {
 
 $('btnTestCard').addEventListener('click', async () => {
   currentSource = testCardSource();
-  refreshPreview();
+  switchSubTab('Image');
   if (printer.connected) {
     notify('Impression de la page de test…');
     await printCurrent();
