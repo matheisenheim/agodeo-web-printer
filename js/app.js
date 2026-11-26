@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 
 const $ = (id) => document.getElementById(id);
@@ -366,16 +366,25 @@ function countdown(n) {
 
 async function refreshCameras() {
   cameras = await listCameras();
+  if (cameraRunning()) {
+    const cur = currentDeviceId();
+    if (cur && cameras.some((c) => c.deviceId === cur)) selectedCamId = cur;
+  }
+  if (selectedCamId && !cameras.some((c) => c.deviceId === selectedCamId)) selectedCamId = null;
   const btn = $('btnCamSwitch');
   if (btn) btn.disabled = cameras.length < 2;
-  if (selectedCamId && !cameras.some((c) => c.deviceId === selectedCamId)) selectedCamId = null;
   updateCamSwitchLabel();
 }
 
 $('btnCamSwitch').addEventListener('click', async () => {
   if (cameras.length === 0) await refreshCameras();
   if (cameras.length < 2) return;
-  const idx = cameras.findIndex((c) => c.deviceId === selectedCamId);
+  let idx = cameras.findIndex((c) => c.deviceId === selectedCamId);
+  if (idx === -1 && cameraRunning()) {
+    const f = currentFacing();
+    if (f === 'user') idx = cameras.findIndex((c) => /(back|arrière|rear|environment)/i.test(c.label || ''));
+    else if (f === 'environment') idx = cameras.findIndex((c) => /(front|avant|user)/i.test(c.label || ''));
+  }
   const next = cameras[(idx + 1) % cameras.length];
   selectedCamId = next.deviceId;
   if (!cameraRunning()) {

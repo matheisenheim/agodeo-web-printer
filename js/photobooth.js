@@ -40,6 +40,13 @@ export function currentFacing() {
   return t.getSettings().facingMode || null;
 }
 
+export function currentDeviceId() {
+  if (!stream) return null;
+  const t = stream.getVideoTracks()[0];
+  if (!t || !t.getSettings) return null;
+  return t.getSettings().deviceId || null;
+}
+
 export async function captureFrame(video, width = PRINT_WIDTH, mirror = false) {
   const vw = video.videoWidth || width;
   const vh = video.videoHeight || Math.round((width * 3) / 4);

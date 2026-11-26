@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.8] — 2026-11-26
+- **Fix switch caméra** : le premier appui sur 🔄 bascule vraiment de caméra (la caméra active est maintenant identifiée via `deviceId` du flux, au lieu de retomber sur `cameras[0]` = la caméra déjà active)
+
 ## [3.0.7] — 2026-11-26
 - Photobooth : **miroir selfie toujours actif** et **minuteur 3-2-1 toujours actif** (plus de cases à cocher)
 - Photobooth : **cadre + date supprimé** autour de la photo (photo brute, 384 px)
