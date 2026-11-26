@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.23] — 2026-11-26
+- **Ordre des onglets** : 🛠️ Admin déplacé **en dernier, tout à droite** — barre : 🏠 Accueil, ✏️ Contenu, 📷 Photo, 🎞️ Photobooth, 🛠️ Admin
+
 ## [3.2.22] — 2026-11-26
 - **Fix mise en page de la Page de test** : les 8 lignes de texte partaient **avant le cadre** (`textAlign` restait à `center` avec x=24 → texte centré en 24, débordant à gauche) → `textAlign: 'left'`, police 12 px et ligne raccourcie pour tenir dans 384 px ; le **QR chevauchait la 8ᵉ ligne** (hauteur fixe 560, QR posé à `h - side - 24`) → hauteur de la carte calculée dynamiquement (`h = qy + side + 18`) et QR placé **sous** le bloc de texte avec une marge
 

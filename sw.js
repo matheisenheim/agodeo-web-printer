@@ -1,4 +1,4 @@
-const CACHE = 'agodeo-web-printer-v3.2.22';
+const CACHE = 'agodeo-web-printer-v3.2.23';
 const ASSETS = [
   './',
   'index.html',
