@@ -373,9 +373,10 @@ body.camfs #camStatus { text-align: center; color: #f0dfc8; margin: 6px 0 0; }
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  font-size: 96px;
+  padding-top: 12vh;
+  font-size: 44px;
   font-weight: bold;
   color: #fff;
   text-shadow: 0 0 14px #000;
@@ -395,16 +396,16 @@ body.camfs #camStatus { text-align: center; color: #f0dfc8; margin: 6px 0 0; }
   z-index: 7;
   pointer-events: none;
 }
-#centerMark::after {
-  content: '';
+#centerDot {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 8px;
-  height: 8px;
-  margin: -4px 0 0 -4px;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
   background: #ffd54a;
   border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 213, 74, 0.9);
 }
 #centerMark[hidden] { display: none; }
 @keyframes focusfade {

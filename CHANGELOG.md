@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.9] — 2026-11-26
+- **Repère centre ◎ = guide de visée uniquement** : le cercle+point ne sont plus dessinés dans la photo capturée (paramètre `markCenter`/`drawCenterMark` retirés de `captureStill`/`captureFrame`) — il reste uniquement l'overlay fixe au centre de l'aperçu live
+
 ## [3.2.8] — 2026-11-26
 - **Repère centre ◎** (bouton ◎ dans l'onglet 📷) : cercle jaune + point fixe **au centre de l'aperçu live** (overlay DOM `#centerMark`) ; si activé, le cercle+point sont aussi **dessinés au centre de la photo capturée** (`drawCenterMark` dans `captureStill`/`captureFrame`, paramètre `markCenter`) → gravé dans la photo téléchargée/imprimée. Idéal pour cadrer sans bouger le téléphone
 

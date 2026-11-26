@@ -964,7 +964,30 @@ let camTimerOn = false;
 let camGridOn = false;
 let centerOn = false;
 
-$('btnCenter').addEventListener('click', () => {
+let orientRAF = null;
+
+window.addEventListener('deviceorientation', (e) => {
+  if (e.gamma === null && e.beta === null) return;
+  if (orientRAF !== null || typeof requestAnimationFrame !== 'function') return;
+  orientRAF = requestAnimationFrame(() => {
+    orientRAF = null;
+    if (!centerOn) return;
+    const dot = $('centerDot');
+    if (!dot) return;
+    const max = 26;
+    const x = Math.max(-max, Math.min(max, (e.gamma || 0) * 0.9));
+    const y = Math.max(-max, Math.min(max, ((e.beta || 0) - 45) * 0.9));
+    dot.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+  });
+});
+
+$('btnCenter').addEventListener('click', async () => {
+  if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
+    try {
+      const res = await DeviceOrientationEvent.requestPermission();
+      if (res !== 'granted') notify('ℹ️ Capteur d\'orientation refusé — le point restera au centre.');
+    } catch (e) {}
+  }
   centerOn = !centerOn;
   $('btnCenter').classList.toggle('on', centerOn);
   $('centerMark').hidden = !centerOn;
