@@ -11,6 +11,8 @@ L'application permet de se connecter depuis le navigateur, lire l'état (papier,
 
 L'interface est organisée en **3 onglets** (barre du bas) : **🖨️ Imprimante** (connexion, état, labo protocole, journal BLE), **✏️ Contenu** (texte / image / QR / modèles + aperçu + impression) et **📸 Photobooth** (plein écran, impression directe de la photo).
 
+📜 **[CHANGELOG.md](CHANGELOG.md)** — historique de toutes les versions (le numéro en haut de l'app = dernière entrée du changelog).
+
 ---
 
 ## 1. Compatibilité
