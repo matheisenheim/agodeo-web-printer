@@ -327,6 +327,9 @@ body.camfs #camStatus { text-align: center; color: #f0dfc8; margin: 6px 0 0; }
 }
 #manualPanel[hidden] { display: none; }
 #manualPanel .row { margin: 6px 0; }
+#manualPanel .mp-stack { display: flex; flex-direction: column; gap: 8px; margin: 6px 0; }
+#manualPanel .mp-stack label { width: 100%; justify-content: space-between; font-size: 13px; }
+#manualPanel .mp-stack select { flex: none; min-width: 120px; }
 #manualPanel label { font-size: 12px; color: #f0dfc8; display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
 #manualPanel select { background: #fffdf8; color: #3e2c20; border: 1px solid var(--line); border-radius: 6px; padding: 4px; font-size: 12px; }
 #manualPanel h4 {

@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.16] — 2026-11-26
+- **Menu manuel ⚙️ : Résolution et FPS séparés** — les deux sélecteurs étaient côte à côte sur une même ligne (facile à confondre) ; ils sont maintenant dans leur propre section « Flux caméra (redémarre la caméra) », **empilés verticalement** (un par ligne pleine largeur, libellé à gauche, valeur à droite), FPS renommé « FPS (images/s) »
+
 ## [3.2.15] — 2026-11-26
 - **Bouton Image non fonctionnel pendant qu'une image est en cours** : l'onglet **Image** et le sélecteur de fichier sont désactivés pendant le décodage d'une image importée (`imageSource`) et pendant toute la durée d'une impression d'image (y compris depuis le photobooth) — réactivés ensuite. Garde-fou anti double import / double impression (flag `imageBusy` + `printBusy`, bouton Imprimer déjà verrouillé pendant l'impression) ; erreur d'import affichée en popup au lieu d'une exception silencieuse
 
