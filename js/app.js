@@ -546,6 +546,19 @@ function updateCamSwitchLabel() {
   let txt = facingTextFor(cameraRunning() ? currentFacing() : null, (cam && cam.label) || '');
   if (!txt && cameraRunning() && !selectedCamId) txt = 'Face';
   b.textContent = txt ? `🔄 ${txt}` : '🔄 Changer de caméra';
+  applyMirror();
+}
+
+function isFrontCam() {
+  if (!cameraRunning()) return true;
+  const cam = cameras.find((c) => c.deviceId === selectedCamId);
+  const txt = facingTextFor(currentFacing(), (cam && cam.label) || '');
+  if (txt) return txt === 'Face';
+  return !selectedCamId;
+}
+
+function applyMirror() {
+  $('cam').classList.toggle('mirrored', isFrontCam());
 }
 
 $('btnCam').addEventListener('click', async () => {
@@ -571,7 +584,7 @@ $('btnCapture').addEventListener('click', async () => {
     await countdown(3);
     let bmp;
     try {
-      bmp = await captureFrame($('cam'), undefined, true, FILTERS[filterIdx].css);
+      bmp = await captureFrame($('cam'), undefined, isFrontCam(), FILTERS[filterIdx].css);
     } finally {
       setScreenFlash(false);
     }

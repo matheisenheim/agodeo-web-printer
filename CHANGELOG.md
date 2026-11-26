@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.23] — 2026-11-26
+- **Miroir uniquement en caméra Face** : en 🔄 **Dos** (caméra arrière), ni l'aperçu ni la photo imprimée ne sont retournés ; en 🔄 Face le miroir reste actif. Détection via `facingMode`/libellé au démarrage et à chaque switch
+
 ## [3.0.22] — 2026-11-26
 - **Bouton ⛶ plein écran dans l'en-tête** (onglets Imprimante et Contenu uniquement — l'en-tête est masqué en Photobooth) : API Fullscreen (`requestFullscreen`/`exitFullscreen`), icône qui passe en 🗗 quand actif
 
