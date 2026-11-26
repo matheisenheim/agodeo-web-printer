@@ -76,7 +76,7 @@ function showView(name) {
   document.body.classList.toggle('booth', booth);
   if (booth) {
     if (savedMode === null) savedMode = val('printMode', '1');
-    $('printMode').value = '2';
+    $('printMode').value = '1';
     populateCameras().catch(() => {});
   } else {
     if (savedMode !== null) {
