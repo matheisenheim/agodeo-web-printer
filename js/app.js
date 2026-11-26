@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 
 const $ = (id) => document.getElementById(id);
@@ -385,12 +385,14 @@ $('btnCamSwitch').addEventListener('click', async () => {
   const label = next.label || `caméra ${idx + 2}`;
   if (!cameraRunning()) {
     $('boothStatus').textContent = `Caméra sélectionnée : ${label} (elle démarrera avec « Démarrer la caméra »).`;
+    updateCamBadge();
     return;
   }
   stopCamera($('cam'));
   try {
     await startCamera($('cam'), selectedCamId);
     applyMirror();
+    updateCamBadge();
     $('boothStatus').textContent = `Caméra : ${label}`;
   } catch (e) {
     $('btnCapture').disabled = true;
@@ -408,6 +410,24 @@ function stopBoothCamera() {
   stopCamera($('cam'));
   $('btnCam').textContent = 'Démarrer la caméra';
   $('btnCapture').disabled = true;
+  $('camBadge').hidden = true;
+}
+
+function updateCamBadge() {
+  const b = $('camBadge');
+  if (!b) return;
+  if (!cameraRunning()) {
+    b.hidden = true;
+    return;
+  }
+  const facing = currentFacing();
+  const cam = cameras.find((c) => c.deviceId === selectedCamId);
+  const label = (cam && cam.label) || '';
+  let txt = '';
+  if (facing === 'environment' || /(back|arrière|rear)/i.test(label)) txt = 'Dos';
+  else if (facing === 'user' || /(front|avant)/i.test(label) || (!facing && !selectedCamId)) txt = 'Face';
+  b.textContent = txt;
+  b.hidden = !txt;
 }
 
 $('btnCam').addEventListener('click', async () => {
@@ -421,6 +441,7 @@ $('btnCam').addEventListener('click', async () => {
     await startCamera($('cam'), selectedCamId || undefined);
     await refreshCameras();
     applyMirror();
+    updateCamBadge();
     $('btnCam').textContent = 'Arrêter la caméra';
     $('btnCapture').disabled = false;
     $('boothStatus').textContent = 'Caméra active — choisis recto/verso dans la liste si plusieurs caméras.';
