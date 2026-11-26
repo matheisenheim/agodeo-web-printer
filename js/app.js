@@ -214,7 +214,6 @@ function showView(name) {
     $('printMode').value = '1';
     refreshCameras().catch(() => {});
     acquireWakeLock();
-    if (!cameraRunning()) startBoothCamera();
   } else {
     if (savedMode !== null) {
       $('printMode').value = savedMode;
