@@ -206,6 +206,22 @@ input[type="number"] { width: 70px; border: 1px solid var(--line); border-radius
   cursor: pointer;
 }
 #cam { width: 100%; display: block; background: #000; }
+#focusRing {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  border: 2px solid #ffd54a;
+  border-radius: 10px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 7;
+}
+#focusRing.show { animation: focusfade 0.9s ease-out; }
+@keyframes focusfade {
+  0% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(0.9); }
+}
 #cam.mirrored { transform: scaleX(-1); }
 #countdown {
   position: absolute;

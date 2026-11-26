@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 import { FILTERS } from './filters.js';
 
@@ -91,12 +91,33 @@ $('camWrap').addEventListener('pointerdown', (e) => {
   swipeX = e.clientX;
   swipeY = e.clientY;
 });
+function showFocusRing(clientX, clientY) {
+  const r = $('focusRing');
+  if (!r) return;
+  const rect = $('camWrap').getBoundingClientRect();
+  r.style.left = `${clientX - rect.left}px`;
+  r.style.top = `${clientY - rect.top}px`;
+  r.classList.remove('show');
+  void r.offsetWidth;
+  r.classList.add('show');
+}
+
 $('camWrap').addEventListener('pointerup', (e) => {
   if (swipeX === null) return;
   const dx = e.clientX - swipeX;
   const dy = e.clientY - swipeY;
   swipeX = null;
-  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) cycleFilter(dx < 0 ? 1 : -1);
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    cycleFilter(dx < 0 ? 1 : -1);
+    return;
+  }
+  if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && cameraRunning()) {
+    const rect = $('camWrap').getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    focusAt(isFrontCam() ? 1 - px : px, py);
+    showFocusRing(e.clientX, e.clientY);
+  }
 });
 $('filterLabel').addEventListener('click', () => cycleFilter(1));
 
@@ -511,6 +532,7 @@ $('btnCamSwitch').addEventListener('click', async () => {
   stopCamera($('cam'));
   try {
     await startCamera($('cam'), selectedCamId);
+    await setFocusMode('continuous');
     updateCamSwitchLabel();
     updateFlashButton();
   } catch (e) {
@@ -568,6 +590,7 @@ $('btnCam').addEventListener('click', async () => {
       return;
     }
     await startCamera($('cam'), selectedCamId || undefined);
+    await setFocusMode('continuous');
     await refreshCameras();
     updateCamSwitchLabel();
     updateFlashButton();

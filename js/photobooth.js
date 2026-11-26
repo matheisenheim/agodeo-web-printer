@@ -61,6 +61,30 @@ export function torchIsOn() {
   return !!s.torch;
 }
 
+export async function setFocusMode(mode) {
+  if (!stream) return false;
+  const t = stream.getVideoTracks()[0];
+  if (!t || !t.applyConstraints) return false;
+  try {
+    await t.applyConstraints({ advanced: [{ focusMode: mode }] });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+export async function focusAt(nx, ny) {
+  if (!stream) return false;
+  const t = stream.getVideoTracks()[0];
+  if (!t || !t.applyConstraints) return false;
+  try {
+    await t.applyConstraints({ advanced: [{ pointsOfInterest: [{ x: nx, y: ny }] }] });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 export async function setTorch(on) {
   if (!stream) return false;
   const t = stream.getVideoTracks()[0];
