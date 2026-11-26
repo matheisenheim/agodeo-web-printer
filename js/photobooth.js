@@ -61,6 +61,30 @@ export function torchIsOn() {
   return !!s.torch;
 }
 
+export function videoTrack() {
+  return stream ? stream.getVideoTracks()[0] : null;
+}
+
+export function zoomCaps() {
+  const t = videoTrack();
+  const c = t && t.getCapabilities ? t.getCapabilities() : {};
+  return c.zoom ? { min: c.zoom.min, max: c.zoom.max, step: c.zoom.step || 0.1 } : null;
+}
+
+export async function setZoom(z) {
+  const t = videoTrack();
+  if (!t || !t.applyConstraints) return false;
+  const c = t.getCapabilities ? t.getCapabilities() : {};
+  if (!c.zoom) return false;
+  const v = Math.max(c.zoom.min, Math.min(c.zoom.max, z));
+  try {
+    await t.applyConstraints({ advanced: [{ zoom: v }] });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 export async function setFocusMode(mode) {
   if (!stream) return false;
   const t = stream.getVideoTracks()[0];

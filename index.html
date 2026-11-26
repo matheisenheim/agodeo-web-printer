@@ -122,6 +122,38 @@
     </div>
   </section>
 
+  <section id="view-camera" class="view">
+    <div class="panel">
+      <h2>Appareil photo</h2>
+      <div id="camWrap2">
+        <video id="cam2" autoplay playsinline muted></video>
+        <div id="gridOverlay" hidden></div>
+      </div>
+      <div class="row">
+        <button id="btnCam2">Démarrer la caméra</button>
+        <button id="btnCamSwitch2" disabled>🔄 Changer de caméra</button>
+        <button id="btnTorch2" hidden title="Flash (torche LED si supportée)">🔦</button>
+      </div>
+      <div class="row">
+        <label>Zoom <input id="zoomSlider" type="range" min="1" max="5" step="0.1" value="1" style="max-width:200px"> <span id="zoomVal">1.0×</span></label>
+        <label><input id="camTimer" type="checkbox"> Minuteur 3 s</label>
+        <label><input id="camGrid" type="checkbox"> Grille 3×3</label>
+      </div>
+      <div class="row">
+        <button id="btnShot" disabled>📸 Prendre une photo</button>
+      </div>
+      <div id="shotPreview" hidden>
+        <canvas id="shotCanvas" width="384"></canvas>
+        <div class="row">
+          <button id="btnShotDownload">💾 Télécharger</button>
+          <button id="btnShotPrint">🖨️ Imprimer</button>
+          <button id="btnShotClose">✕ Fermer</button>
+        </div>
+      </div>
+      <div id="camStatus" class="status"></div>
+    </div>
+  </section>
+
   <section id="view-booth" class="view">
     <div id="camWrap">
       <video id="cam" autoplay playsinline muted></video>
@@ -150,7 +182,8 @@
 <nav id="tabbar">
   <button class="tabbar-btn active" data-view="printer"><span class="ico">🖨️</span><span>Imprimante</span></button>
   <button class="tabbar-btn" data-view="content"><span class="ico">✏️</span><span>Contenu</span></button>
-  <button class="tabbar-btn" data-view="booth"><span class="ico">📸</span><span>Photobooth</span></button>
+  <button class="tabbar-btn" data-view="camera"><span class="ico">📷</span><span>Photo</span></button>
+  <button class="tabbar-btn" data-view="booth"><span class="ico">🎞️</span><span>Photobooth</span></button>
 </nav>
 <script type="module" src="js/app.js"></script>
 </body>

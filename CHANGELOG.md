@@ -3,6 +3,15 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.1.0] — 2026-11-26
+- **Nouvel onglet 📷 « Photo » (appareil photo)** : aperçu live, **zoom** (slider borné par `capabilities.zoom`, `applyConstraints({ advanced: [{ zoom }] })`), **flash 🔦** (torche si supportée), **switch caméra 🔄 Face/Dos**, **minuteur 3 s**, **grille 3×3**, tap-to-focus, miroir auto (Face seulement)
+- Capture → aperçu de la photo avec **💾 Télécharger** (PNG) ou **🖨️ Imprimer** directement
+- La caméra est arrêtée automatiquement en quittant l'onglet
+
+## [3.0.24] — 2026-11-26
+- **Focus caméra** : `focusMode: 'continuous'` appliqué (best-effort) à chaque démarrage/switch de caméra via `applyConstraints({ advanced })`
+- **Tap-to-focus** : un tap (sans balayage) sur l'aperçu envoie `pointsOfInterest: [{ x, y }]` à la caméra (coordonnée X inversée en caméra Face à cause du miroir) + carré jaune animé `#focusRing` au point touché
+
 ## [3.0.23] — 2026-11-26
 - **Miroir uniquement en caméra Face** : en 🔄 **Dos** (caméra arrière), ni l'aperçu ni la photo imprimée ne sont retournés ; en 🔄 Face le miroir reste actif. Détection via `facingMode`/libellé au démarrage et à chaque switch
 

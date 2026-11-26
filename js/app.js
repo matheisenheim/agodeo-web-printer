@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 import { FILTERS } from './filters.js';
 
@@ -178,6 +178,7 @@ $('btnTorch').addEventListener('click', async () => {
 
 function showView(name) {
   if (name === 'booth' && currentView !== 'booth') prevView = currentView;
+  if (currentView === 'camera' && name !== 'camera') stopCamTab();
   currentView = name;
   document.querySelectorAll('.view').forEach((v) => {
     v.classList.toggle('active', v.id === `view-${name}`);
@@ -580,7 +581,10 @@ function isFrontCam() {
 }
 
 function applyMirror() {
-  $('cam').classList.toggle('mirrored', isFrontCam());
+  const m = isFrontCam();
+  $('cam').classList.toggle('mirrored', m);
+  const c2 = $('cam2');
+  if (c2) c2.classList.toggle('mirrored', m);
 }
 
 $('btnCam').addEventListener('click', async () => {
@@ -629,7 +633,149 @@ $('btnTestCard').addEventListener('click', async () => {
   }
 });
 
-window.addEventListener('beforeunload', () => stopCamera($('cam')));
+window.addEventListener('beforeunload', () => { stopCamera($('cam')); stopCamera($('cam2')); });
+
+// --- Onglet Appareil photo (📷 Photo) ---
+let camTabRunning = false;
+let lastShot = null;
+
+function camTabUI() {
+  $('btnCam2').textContent = camTabRunning ? 'Arrêter la caméra' : 'Démarrer la caméra';
+  $('btnShot').disabled = !camTabRunning;
+  const tb = $('btnTorch2');
+  const supported = camTabRunning && torchSupported();
+  tb.hidden = !supported;
+  tb.classList.toggle('on', supported && torchIsOn());
+  const sw = $('btnCamSwitch2');
+  sw.disabled = cameras.length < 2;
+  const cam = cameras.find((c) => c.deviceId === selectedCamId);
+  let txt = facingTextFor(camTabRunning ? currentFacing() : null, (cam && cam.label) || '');
+  if (!txt && camTabRunning && !selectedCamId) txt = 'Face';
+  sw.textContent = txt ? `🔄 ${txt}` : '🔄 Changer de caméra';
+  applyMirror();
+}
+
+function stopCamTab() {
+  stopCamera($('cam2'));
+  camTabRunning = false;
+  camTabUI();
+  $('camStatus').textContent = '';
+}
+
+$('btnCam2').addEventListener('click', async () => {
+  try {
+    if (camTabRunning) {
+      stopCamTab();
+      return;
+    }
+    await startCamera($('cam2'), selectedCamId || undefined);
+    await setFocusMode('continuous');
+    camTabRunning = true;
+    await refreshCameras();
+    const zc = zoomCaps();
+    const zs = $('zoomSlider');
+    if (zc) {
+      zs.min = zc.min;
+      zs.max = zc.max;
+      zs.step = zc.step || 0.1;
+      zs.value = Math.max(zc.min, 1);
+      zs.disabled = false;
+      $('zoomVal').textContent = `${Number(zs.value).toFixed(1)}×`;
+    } else {
+      zs.disabled = true;
+    }
+    camTabUI();
+    $('camStatus').textContent = '';
+  } catch (e) {
+    notify(`❌ Caméra : ${e.message}`);
+  }
+});
+
+$('btnCamSwitch2').addEventListener('click', async () => {
+  if (cameras.length === 0) await refreshCameras();
+  if (cameras.length < 2) return;
+  let idx = cameras.findIndex((c) => c.deviceId === selectedCamId);
+  if (idx === -1 && camTabRunning) {
+    const f = currentFacing();
+    if (f === 'user') idx = cameras.findIndex((c) => /(back|arrière|rear|environment)/i.test(c.label || ''));
+    else if (f === 'environment') idx = cameras.findIndex((c) => /(front|avant|user)/i.test(c.label || ''));
+  }
+  const next = cameras[(idx + 1) % cameras.length];
+  selectedCamId = next.deviceId;
+  if (!camTabRunning) {
+    camTabUI();
+    return;
+  }
+  stopCamera($('cam2'));
+  try {
+    await startCamera($('cam2'), selectedCamId);
+    await setFocusMode('continuous');
+    camTabUI();
+  } catch (e) {
+    notify(`❌ Caméra : ${e.message}`);
+  }
+});
+
+$('btnTorch2').addEventListener('click', async () => {
+  if (!camTabRunning) return;
+  const ok = await setTorch(!torchIsOn());
+  if (!ok) notify('❌ Flash (torche) non disponible sur cette caméra.');
+  camTabUI();
+});
+
+$('zoomSlider').addEventListener('input', async () => {
+  const z = Number(val('zoomSlider', '1'));
+  $('zoomVal').textContent = `${z.toFixed(1)}×`;
+  await setZoom(z);
+});
+
+$('camGrid').addEventListener('change', () => {
+  $('gridOverlay').hidden = !isChecked('camGrid', false);
+});
+
+$('btnShot').addEventListener('click', async () => {
+  try {
+    if (isChecked('camTimer', false)) {
+      const cs = $('camStatus');
+      for (let i = 3; i > 0; i--) {
+        cs.textContent = `Minuteur : ${i}…`;
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+    }
+    const bmp = await captureFrame($('cam2'), undefined, isFrontCam(), 'none');
+    lastShot = bmp;
+    const cv = $('shotCanvas');
+    cv.width = bmp.width;
+    cv.height = bmp.height;
+    cv.getContext('2d').drawImage(bmp, 0, 0);
+    $('shotPreview').hidden = false;
+    $('camStatus').textContent = 'Photo prise.';
+  } catch (e) {
+    notify(`❌ Photo : ${e.message}`);
+  }
+});
+
+$('btnShotClose').addEventListener('click', () => {
+  $('shotPreview').hidden = true;
+});
+
+$('btnShotDownload').addEventListener('click', () => {
+  const cv = $('shotCanvas');
+  cv.toBlob((b) => {
+    if (!b) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = `photo-${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }, 'image/png');
+});
+
+$('btnShotPrint').addEventListener('click', async () => {
+  if (!lastShot) return;
+  currentSource = { kind: 'image', bmp: lastShot };
+  await printCurrent();
+});
 
 function parseHex(str) {
   const clean = String(str || '').trim().replace(/0x/gi, '').replace(/\s+/g, '');

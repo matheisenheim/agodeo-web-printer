@@ -206,6 +206,35 @@ input[type="number"] { width: 70px; border: 1px solid var(--line); border-radius
   cursor: pointer;
 }
 #cam { width: 100%; display: block; background: #000; }
+#camWrap2 {
+  position: relative;
+  background: #000;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+#cam2 { width: 100%; display: block; background: #000; }
+#cam2.mirrored { transform: scaleX(-1); }
+#gridOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    linear-gradient(to right, transparent calc(33.33% - 1px), rgba(255,255,255,0.6) calc(33.33% - 1px), rgba(255,255,255,0.6) calc(33.33% + 1px), transparent calc(33.33% + 1px)),
+    linear-gradient(to right, transparent calc(66.66% - 1px), rgba(255,255,255,0.6) calc(66.66% - 1px), rgba(255,255,255,0.6) calc(66.66% + 1px), transparent calc(66.66% + 1px)),
+    linear-gradient(to bottom, transparent calc(33.33% - 1px), rgba(255,255,255,0.6) calc(33.33% - 1px), rgba(255,255,255,0.6) calc(33.33% + 1px), transparent calc(33.33% + 1px)),
+    linear-gradient(to bottom, transparent calc(66.66% - 1px), rgba(255,255,255,0.6) calc(66.66% - 1px), rgba(255,255,255,0.6) calc(66.66% + 1px), transparent calc(66.66% + 1px));
+}
+#gridOverlay[hidden] { display: none; }
+#shotCanvas {
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+#btnTorch2.on { background: #eab308; color: #3e2c20; border-color: #eab308; }
+#btnTorch2[hidden] { display: none; }
 #focusRing {
   position: absolute;
   width: 64px;
