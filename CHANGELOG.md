@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.9] — 2026-11-26
+- **Fix position du bouton ✕ Quitter** en plein écran : le conteneur caméra (`#camWrap`) gardait `margin: 0 auto`, donc il se centrait sur la largeur intrinsèque de la vidéo — le bouton était décalé vers le milieu et **bougeait au switch de caméra** (résolutions différentes). `#camWrap` est maintenant forcé en `width: 100%; margin: 0` en mode plein écran : ✕ collé à droite de l'écran, fixe
+
 ## [3.0.8] — 2026-11-26
 - **Fix switch caméra** : le premier appui sur 🔄 bascule vraiment de caméra (la caméra active est maintenant identifiée via `deviceId` du flux, au lieu de retomber sur `cameras[0]` = la caméra déjà active)
 
