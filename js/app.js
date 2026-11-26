@@ -1001,7 +1001,19 @@ async function applyManualNow() {
   if (Object.keys(obj).length) await applyAdvanced(obj);
 }
 
+function poseSeconds() {
+  const s = manualSliders.exposureTime;
+  if (!s || !s.dirty) return 0;
+  const c = trackCaps().exposureTime;
+  if (!c || c.min === undefined) return 0;
+  const v = Number(s.inp.value);
+  return c.max < 10 ? v : v / 1000;
+}
+
 $('btnShot').addEventListener('click', async () => {
+  $('manualPanel').hidden = true;
+  $('btnManual').classList.remove('on');
+  let cdTimer = null;
   try {
     if (camTimerOn) {
       const cs = $('camStatus');
@@ -1011,8 +1023,25 @@ $('btnShot').addEventListener('click', async () => {
       }
     }
     await applyManualNow();
+    const pose = poseSeconds();
+    if (pose > 2) {
+      const el = $('shotCountdown');
+      let remaining = pose;
+      el.hidden = false;
+      el.textContent = remaining.toFixed(1);
+      cdTimer = setInterval(() => {
+        remaining -= 0.1;
+        if (remaining <= 0) {
+          clearInterval(cdTimer);
+          cdTimer = null;
+          el.hidden = true;
+        } else {
+          el.textContent = remaining.toFixed(1);
+        }
+      }, 100);
+    }
     await new Promise((r) => setTimeout(r, 250));
-    $('camStatus').textContent = 'Capture en cours…';
+    $('camStatus').textContent = pose > 2 ? `Pose ${pose.toFixed(1)} s…` : 'Capture en cours…';
     const bmp = await captureStill($('cam2'), undefined, isFrontCam(), 'none');
     lastShot = bmp;
     await restorePose();
@@ -1024,6 +1053,9 @@ $('btnShot').addEventListener('click', async () => {
     $('camStatus').textContent = 'Photo prise.';
   } catch (e) {
     notify(`❌ Photo : ${e.message}`);
+  } finally {
+    if (cdTimer) clearInterval(cdTimer);
+    $('shotCountdown').hidden = true;
   }
 });
 

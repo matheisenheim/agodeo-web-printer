@@ -3,6 +3,10 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.6] — 2026-11-26
+- **Fix virage bleu de la balance des blancs** : à la capture, seuls les réglages **effectivement modifiés par l'utilisateur** (flag dirty sur sliders et sélecteurs de mode) sont appliqués — avant, `applyManualNow()` forçait tous les modes en manuel (WB à la valeur K courante du capteur → bleu). Les modes non touchés restent en auto (`continuous`)
+- **Pose** : slider désactivé avec mention « non supportée » si `capabilities.exposureTime` absent ou min==max (téléphone qui ne permet pas la pose manuelle)
+
 ## [3.2.5] — 2026-11-26
 - **Fix pose longue** : la photo de l'onglet 📷 passe par **`ImageCapture.takePhoto()`** (nouveau `captureStill()` dans `photobooth.js`, repli sur la trame d'aperçu si indisponible) au lieu de `drawImage(video)` — une pose de 8 s est maintenant réellement appliquée à la photo (la promesse ne rend qu'après la pose), puis redimensionnée à 384 px. Statut « Capture en cours… » pendant la pose
 
