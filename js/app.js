@@ -60,6 +60,14 @@ function setPrintStatus(msg) {
   if (bs) bs.textContent = msg;
 }
 
+function showError(msg) {
+  $('popupMsg').textContent = msg;
+  $('popup').hidden = false;
+}
+
+$('btnPopupClose').addEventListener('click', () => { $('popup').hidden = true; });
+$('popup').addEventListener('click', (e) => { if (e.target === $('popup')) $('popup').hidden = true; });
+
 let currentView = 'printer';
 let prevView = 'printer';
 let savedMode = null;
@@ -319,7 +327,7 @@ async function printCurrent() {
     return;
   }
   if (!printer.connected) {
-    setPrintStatus('❌ Imprimante non connectée — connecte-la dans l\'onglet 🖨️ Imprimante, puis re-prends la photo.');
+    showError('❌ Imprimante non connectée — connecte-la dans l\'onglet 🖨️ Imprimante, puis re-prends la photo.');
     return;
   }
   try {
@@ -334,7 +342,7 @@ async function printCurrent() {
     });
     setPrintStatus(`✅ Terminé : ${n} lignes envoyées.`);
   } catch (e) {
-    setPrintStatus(`❌ L'imprimante ne répond pas / erreur : ${e.message}`);
+    showError(`❌ L'imprimante ne répond pas / erreur : ${e.message}`);
   } finally {
     refreshPreview();
   }
@@ -394,7 +402,7 @@ $('btnCamSwitch').addEventListener('click', async () => {
     updateCamSwitchLabel();
   } catch (e) {
     $('btnCapture').disabled = true;
-    $('boothStatus').textContent = `Caméra : ${e.message}`;
+    showError(`❌ Caméra : ${e.message}`);
   }
 });
 
@@ -439,7 +447,7 @@ $('btnCam').addEventListener('click', async () => {
     $('btnCam').textContent = 'Arrêter la caméra';
     $('btnCapture').disabled = false;
   } catch (e) {
-    $('boothStatus').textContent = `Caméra : ${e.message}`;
+    showError(`❌ Caméra : ${e.message}`);
   }
 });
 
@@ -452,7 +460,7 @@ $('btnCapture').addEventListener('click', async () => {
       : { kind: 'image', bmp };
     await printCurrent();
   } catch (e) {
-    $('boothStatus').textContent = `❌ Erreur capture : ${e.message}`;
+    showError(`❌ Erreur capture : ${e.message}`);
   }
 });
 

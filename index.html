@@ -129,23 +129,29 @@
       <button id="btnExitBooth" title="Quitter le photobooth (retour à l'onglet précédent)">✕ Quitter</button>
     </div>
     <div class="booth-controls">
-      <div class="row">
-        <button id="btnCam">Démarrer la caméra</button>
-        <button id="btnCamSwitch" disabled>🔄 Changer de caméra</button>
-      </div>
-      <div class="row">
-        <button id="btnCapture" disabled>📸 Prendre la photo</button>
-      </div>
-      <div class="row">
+      <div class="row booth-options">
         <label><input id="pbFrame" type="checkbox" checked> Cadre + date</label>
         <input id="pbLabel" type="text" value="Souriez !" style="max-width:150px">
         <label><input id="pbMirror" type="checkbox" checked> Miroir</label>
         <label><input id="pbTimer" type="checkbox" checked> Minuteur 3-2-1</label>
       </div>
-      <div id="boothStatus" class="status"></div>
+      <div class="booth-bar">
+        <div class="booth-left">
+          <button id="btnCam">Démarrer la caméra</button>
+          <button id="btnCamSwitch" disabled>🔄 Changer de caméra</button>
+        </div>
+        <div id="boothStatus" class="status"></div>
+        <button id="btnCapture" disabled title="Prendre la photo (imprime directement)">📸</button>
+      </div>
     </div>
   </section>
 </main>
+<div id="popup" hidden>
+  <div id="popupBox">
+    <div id="popupMsg"></div>
+    <button id="btnPopupClose">OK</button>
+  </div>
+</div>
 <nav id="tabbar">
   <button class="tabbar-btn active" data-view="printer"><span class="ico">🖨️</span><span>Imprimante</span></button>
   <button class="tabbar-btn" data-view="content"><span class="ico">✏️</span><span>Contenu</span></button>
