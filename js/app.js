@@ -374,6 +374,7 @@ async function refreshCameras() {
   const btn = $('btnCamSwitch');
   if (btn) btn.disabled = cameras.length < 2;
   if (selectedCamId && !cameras.some((c) => c.deviceId === selectedCamId)) selectedCamId = null;
+  updateCamSwitchLabel();
 }
 
 $('btnCamSwitch').addEventListener('click', async () => {
@@ -382,18 +383,15 @@ $('btnCamSwitch').addEventListener('click', async () => {
   const idx = cameras.findIndex((c) => c.deviceId === selectedCamId);
   const next = cameras[(idx + 1) % cameras.length];
   selectedCamId = next.deviceId;
-  const label = next.label || `caméra ${idx + 2}`;
   if (!cameraRunning()) {
-    $('boothStatus').textContent = `Caméra sélectionnée : ${label} (elle démarrera avec « Démarrer la caméra »).`;
-    updateCamBadge();
+    updateCamSwitchLabel();
     return;
   }
   stopCamera($('cam'));
   try {
     await startCamera($('cam'), selectedCamId);
     applyMirror();
-    updateCamBadge();
-    $('boothStatus').textContent = `Caméra : ${label}`;
+    updateCamSwitchLabel();
   } catch (e) {
     $('btnCapture').disabled = true;
     $('boothStatus').textContent = `Caméra : ${e.message}`;
@@ -410,41 +408,36 @@ function stopBoothCamera() {
   stopCamera($('cam'));
   $('btnCam').textContent = 'Démarrer la caméra';
   $('btnCapture').disabled = true;
-  $('camBadge').hidden = true;
+  updateCamSwitchLabel();
 }
 
-function updateCamBadge() {
-  const b = $('camBadge');
+function facingTextFor(facing, label) {
+  if (facing === 'environment' || /(back|arrière|rear)/i.test(label || '')) return 'Dos';
+  if (facing === 'user' || /(front|avant)/i.test(label || '')) return 'Face';
+  return '';
+}
+
+function updateCamSwitchLabel() {
+  const b = $('btnCamSwitch');
   if (!b) return;
-  if (!cameraRunning()) {
-    b.hidden = true;
-    return;
-  }
-  const facing = currentFacing();
   const cam = cameras.find((c) => c.deviceId === selectedCamId);
-  const label = (cam && cam.label) || '';
-  let txt = '';
-  if (facing === 'environment' || /(back|arrière|rear)/i.test(label)) txt = 'Dos';
-  else if (facing === 'user' || /(front|avant)/i.test(label) || (!facing && !selectedCamId)) txt = 'Face';
-  b.textContent = txt;
-  b.hidden = !txt;
+  let txt = facingTextFor(cameraRunning() ? currentFacing() : null, (cam && cam.label) || '');
+  if (!txt && cameraRunning() && !selectedCamId) txt = 'Face';
+  b.textContent = txt ? `🔄 ${txt}` : '🔄 Changer de caméra';
 }
 
 $('btnCam').addEventListener('click', async () => {
   try {
     if (cameraRunning()) {
       stopBoothCamera();
-      $('boothStatus').textContent = 'Caméra arrêtée.';
       return;
     }
-    $('boothStatus').textContent = 'Demande d\'accès à la caméra… (autorise-la dans le navigateur)';
     await startCamera($('cam'), selectedCamId || undefined);
     await refreshCameras();
     applyMirror();
-    updateCamBadge();
+    updateCamSwitchLabel();
     $('btnCam').textContent = 'Arrêter la caméra';
     $('btnCapture').disabled = false;
-    $('boothStatus').textContent = 'Caméra active — choisis recto/verso dans la liste si plusieurs caméras.';
   } catch (e) {
     $('boothStatus').textContent = `Caméra : ${e.message}`;
   }

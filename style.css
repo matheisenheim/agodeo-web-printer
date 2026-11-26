@@ -150,20 +150,6 @@ input[type="number"] { width: 70px; border: 1px solid #ccc; border-radius: 6px; 
   font-size: 13px;
 }
 #btnExitBooth:disabled { background: rgba(0, 0, 0, 0.3); }
-#camBadge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 5;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  pointer-events: none;
-}
-#camBadge[hidden] { display: none; }
 .booth-controls { max-width: 480px; margin: 12px auto; }
 #boothStatus { text-align: center; }
 
