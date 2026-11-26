@@ -166,21 +166,6 @@ input[type="number"] { width: 70px; border: 1px solid #ccc; border-radius: 6px; 
 }
 #btnTorch.on { background: #eab308; color: #1c1e21; border-color: #eab308; }
 #btnTorch[hidden] { display: none; }
-#btnScreenFlash {
-  position: absolute;
-  top: 10px;
-  left: 62px;
-  z-index: 5;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  padding: 0;
-  font-size: 20px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-}
-#btnScreenFlash.on { background: #fff; color: #1c1e21; border-color: #fff; }
 #flashOverlay {
   position: fixed;
   inset: 0;

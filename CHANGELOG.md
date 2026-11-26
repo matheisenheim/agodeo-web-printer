@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.13] — 2026-11-26
+- **Un seul bouton flash** en haut à gauche : 🔦 torche LED si la caméra active la supporte, **sinon 🖥️ écran blanc** (plein blanc pendant le minuteur + capture) — ex. caméra Face sans flash. Le bouton est caché quand la caméra est arrêtée ; l'icône/état suivent le switch de caméra
+
 ## [3.0.12] — 2026-11-26
 - **Flash écran** (simulation de flash sur téléphone) : bouton 🖥️ en haut à gauche — pendant le minuteur 3-2-1 et la capture, l'écran passe **plein blanc** (overlay) ; **Wake Lock** (`navigator.wakeLock`) actif dans l'onglet Photobooth pour empêcher l'assombrissement automatique. Note : aucune API web ne peut régler la luminosité système au max — la combine plein blanc + wake lock est le maximum atteignable (luminosité à régler manuellement au max)
 

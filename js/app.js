@@ -94,9 +94,33 @@ function setScreenFlash(on) {
   $('flashOverlay').hidden = !on;
 }
 
-$('btnScreenFlash').addEventListener('click', () => {
-  screenFlash = !screenFlash;
-  $('btnScreenFlash').classList.toggle('on', screenFlash);
+function flashMode() {
+  return cameraRunning() && torchSupported() ? 'torch' : 'screen';
+}
+
+function updateFlashButton() {
+  const b = $('btnTorch');
+  if (!b) return;
+  const running = cameraRunning();
+  b.hidden = !running;
+  const mode = flashMode();
+  b.textContent = mode === 'torch' ? '🔦' : '🖥️';
+  b.title = mode === 'torch'
+    ? 'Flash LED de la caméra (torche)'
+    : 'Flash écran : plein blanc pendant le minuteur et la capture (pas de flash LED sur cette caméra)';
+  const on = running && (mode === 'torch' ? torchIsOn() : screenFlash);
+  b.classList.toggle('on', on);
+}
+
+$('btnTorch').addEventListener('click', async () => {
+  if (!cameraRunning()) return;
+  if (flashMode() === 'torch') {
+    const ok = await setTorch(!torchIsOn());
+    if (!ok) notify('❌ Flash (torche) non disponible sur cette caméra.');
+  } else {
+    screenFlash = !screenFlash;
+  }
+  updateFlashButton();
 });
 
 function showView(name) {
@@ -123,7 +147,7 @@ function showView(name) {
     if (cameraRunning()) stopBoothCamera();
     setScreenFlash(false);
     screenFlash = false;
-    $('btnScreenFlash').classList.remove('on');
+    updateFlashButton();
     releaseWakeLock();
     if (name === 'content') refreshPreview();
   }
@@ -432,7 +456,7 @@ $('btnCamSwitch').addEventListener('click', async () => {
   try {
     await startCamera($('cam'), selectedCamId);
     updateCamSwitchLabel();
-    updateTorchButton();
+    updateFlashButton();
   } catch (e) {
     $('btnCapture').disabled = true;
     notify(`❌ Caméra : ${e.message}`);
@@ -450,23 +474,8 @@ function stopBoothCamera() {
   $('btnCam').textContent = 'Démarrer la caméra';
   $('btnCapture').disabled = true;
   updateCamSwitchLabel();
-  $('btnTorch').hidden = true;
+  updateFlashButton();
 }
-
-function updateTorchButton() {
-  const b = $('btnTorch');
-  if (!b) return;
-  const supported = cameraRunning() && torchSupported();
-  b.hidden = !supported;
-  b.classList.toggle('on', supported && torchIsOn());
-}
-
-$('btnTorch').addEventListener('click', async () => {
-  const wantOn = !(cameraRunning() && torchIsOn());
-  const ok = await setTorch(wantOn);
-  if (!ok) notify('❌ Flash (torche) non disponible sur cette caméra.');
-  updateTorchButton();
-});
 
 function facingTextFor(facing, label) {
   if (facing === 'environment' || /(back|arrière|rear)/i.test(label || '')) return 'Dos';
@@ -492,7 +501,7 @@ $('btnCam').addEventListener('click', async () => {
     await startCamera($('cam'), selectedCamId || undefined);
     await refreshCameras();
     updateCamSwitchLabel();
-    updateTorchButton();
+    updateFlashButton();
     $('btnCam').textContent = 'Arrêter la caméra';
     $('btnCapture').disabled = false;
   } catch (e) {
