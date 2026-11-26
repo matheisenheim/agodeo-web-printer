@@ -132,19 +132,23 @@
     </div>
     <div class="cam-controls">
       <div id="manualPanel" hidden>
+        <div class="row mp-head">
+          <strong>⚙️ Réglages manuels</strong>
+          <button id="btnManualReset">↺ Auto</button>
+        </div>
         <div class="row">
           <label>Résolution <select id="resSelect"></select></label>
           <label>FPS <select id="fpsSelect"></select></label>
         </div>
-        <div class="row">
-          <label>Focus <select id="modeFocus"></select></label>
-          <label>Expo <select id="modeExposure"></select></label>
-          <label>WB <select id="modeWB"></select></label>
-        </div>
-        <div id="manualRows"></div>
-        <div class="row">
-          <button id="btnManualReset">↺ Tout remettre en auto</button>
-        </div>
+        <h4>Exposition</h4>
+        <div class="row"><label>Mode <select id="modeExposure"></select></label></div>
+        <div id="rowsExpo"></div>
+        <h4>Focus</h4>
+        <div class="row"><label>Mode <select id="modeFocus"></select></label></div>
+        <div id="rowsFocus"></div>
+        <h4>Couleurs & image</h4>
+        <div class="row"><label>WB <select id="modeWB"></select></label></div>
+        <div id="rowsImage"></div>
       </div>
       <div class="row cam-zoom">
         <span>🔍</span>

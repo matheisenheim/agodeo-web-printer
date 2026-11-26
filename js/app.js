@@ -670,16 +670,18 @@ let initialSettings = null;
 const manualSliders = {};
 
 const MANUAL_PARAMS = [
-  { key: 'focusDistance', label: 'Focus manuel', fmt: (v) => v.toFixed(2) },
-  { key: 'exposureCompensation', label: 'Exposition (EV)', fmt: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}` },
-  { key: 'exposureTime', label: 'Pose (capture seule)', fmt: (v) => v.toFixed(1) },
-  { key: 'iso', label: 'ISO', fmt: (v) => String(Math.round(v)) },
-  { key: 'colorTemperature', label: 'Blancs (K)', fmt: (v) => String(Math.round(v)) },
-  { key: 'brightness', label: 'Luminosité', fmt: (v) => v.toFixed(1) },
-  { key: 'contrast', label: 'Contraste', fmt: (v) => v.toFixed(2) },
-  { key: 'saturation', label: 'Saturation', fmt: (v) => v.toFixed(2) },
-  { key: 'sharpness', label: 'Netteté', fmt: (v) => v.toFixed(2) },
+  { key: 'focusDistance', label: 'Focus manuel', group: 'focus', fmt: (v) => v.toFixed(2) },
+  { key: 'exposureCompensation', label: 'Exposition (EV)', group: 'expo', fmt: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}` },
+  { key: 'exposureTime', label: 'Pose (capture seule)', group: 'expo', fmt: null },
+  { key: 'iso', label: 'ISO', group: 'expo', fmt: (v) => String(Math.round(v)) },
+  { key: 'colorTemperature', label: 'Blancs (K)', group: 'image', fmt: (v) => String(Math.round(v)) },
+  { key: 'brightness', label: 'Luminosité', group: 'image', fmt: (v) => v.toFixed(1) },
+  { key: 'contrast', label: 'Contraste', group: 'image', fmt: (v) => v.toFixed(2) },
+  { key: 'saturation', label: 'Saturation', group: 'image', fmt: (v) => v.toFixed(2) },
+  { key: 'sharpness', label: 'Netteté', group: 'image', fmt: (v) => v.toFixed(2) },
 ];
+
+const MANUAL_GROUPS = { expo: 'rowsExpo', focus: 'rowsFocus', image: 'rowsImage' };
 
 const MODE_FOR_PARAM = {
   focusDistance: { sel: 'modeFocus', key: 'focusMode' },
@@ -743,15 +745,17 @@ function buildManualPanel() {
   fillModeSelect($('modeFocus'), caps.focusMode, 'focusMode');
   fillModeSelect($('modeExposure'), caps.exposureMode, 'exposureMode');
   fillModeSelect($('modeWB'), caps.whiteBalanceMode, 'whiteBalanceMode');
-  const rows = $('manualRows');
-  rows.innerHTML = '';
+  for (const g of Object.values(MANUAL_GROUPS)) {
+    const el = $(g);
+    if (el) el.innerHTML = '';
+  }
   for (const k in manualSliders) delete manualSliders[k];
   const settings = trackSettings();
   for (const p of MANUAL_PARAMS) {
     const c = caps[p.key];
     if (!c || c.min === undefined || c.max === undefined) continue;
-    const fmt = p.key === 'exposureTime' && c.max < 10
-      ? (v) => `${(v * 1000).toFixed(0)} ms`
+    const fmt = p.key === 'exposureTime'
+      ? (c.max < 10 ? (v) => `${v.toFixed(3)} s` : (v) => `${(v / 1000).toFixed(3)} s`)
       : p.fmt;
     const modeFor = MODE_FOR_PARAM[p.key];
     const row = document.createElement('div');
@@ -778,7 +782,8 @@ function buildManualPanel() {
     row.appendChild(lab);
     row.appendChild(inp);
     row.appendChild(val);
-    rows.appendChild(row);
+    const rows = $(MANUAL_GROUPS[p.group] || 'rowsImage');
+    if (rows) rows.appendChild(row);
     manualSliders[p.key] = { inp, val, fmt };
   }
   buildResFps(caps);
