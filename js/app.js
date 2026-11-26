@@ -3,7 +3,7 @@ import { textSource, imageSource, renderSourceToLines, drawPreview } from './ima
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
 import { startCamera, stopCamera, cameraRunning, captureFrame, captureStill, blobToStill, openCaptureStream, captureBlobFromTrack, applyAdvancedToTrack, waitAppliedExposure, accumulateLongExposure, measureLuma, stopStream, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
-import { APP_VERSION } from './protocol.js';
+import { APP_VERSION, formatQueryCount } from './protocol.js';
 import { FILTERS } from './filters.js';
 
 const $ = (id) => document.getElementById(id);
@@ -402,7 +402,7 @@ async function refreshPrinterInfo() {
     if (st && st.text) parts.push(st.text);
     if (info && info.version) parts.push(`firmware ${info.version}`);
     if (info && info.type !== null && info.type !== undefined) parts.push(`type 0x${info.type.toString(16)}`);
-    if (info && info.count) parts.push(`impressions (A7) : 0x${info.count.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`);
+    if (info && info.count) parts.push(`impressions (A7) : ${formatQueryCount(info.count)}`);
     el.textContent = parts.join(' — ');
   } catch (e) {
     el.textContent = `✅ Connecté : ${name} — infos indisponibles (${e.message})`;
