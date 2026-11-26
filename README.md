@@ -92,7 +92,7 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 1. Allumer l'imprimante, charger un rouleau 57 mm, fermer FunPrint sur le téléphone.
 2. Cliquer **« Connecter l'imprimante »** (laisser le préfixe vide pour tout lister, ou taper `MXW01`), choisir l'imprimante dans le sélecteur du navigateur.
 3. **« État de l'imprimante »** : pour un MXW01 affiche état + batterie % + température de la tête + erreur éventuelle (pas de papier, surchauffe…).
-4. Onglet **Contenu** : sous-onglets **Texte**, **Image**, **QR code** ou **Modèles**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large).
+4. Onglet **Contenu** : sous-onglets **Texte**, **Image**, **QR code** ou **Modèles**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large). Le sous-onglet **Image** et le sélecteur de fichier sont **désactivés pendant qu'une image est en cours** (décodage d'un import ou impression d'une image en cours) pour éviter double import / double impression.
 
 ### Labo protocole (reverse engineering)
 

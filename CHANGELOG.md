@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.15] — 2026-11-26
+- **Bouton Image non fonctionnel pendant qu'une image est en cours** : l'onglet **Image** et le sélecteur de fichier sont désactivés pendant le décodage d'une image importée (`imageSource`) et pendant toute la durée d'une impression d'image (y compris depuis le photobooth) — réactivés ensuite. Garde-fou anti double import / double impression (flag `imageBusy` + `printBusy`, bouton Imprimer déjà verrouillé pendant l'impression) ; erreur d'import affichée en popup au lieu d'une exception silencieuse
+
 ## [3.2.14] — 2026-11-26
 - **Pose longue émulée par accumulation des trames live (onglet 📷)** : sur ce téléphone, `takePhoto()` ignore la pose manuelle du track (photo en 2,6 s malgré « pose appliquée 19,4 s ») et le HAL caméra partagé blanchissait l'aperçu pendant la pose. Si la pose réglée dépasse 2 s, la photo est désormais construite par **accumulation additive des trames de l'aperçu live** (`accumulateLongExposure`, composite `lighter` sur canvas, ~10 trames/s) pendant toute la durée de la pose : **la visée reste 100 % live** (jamais blanc, aucun réglage appliqué au flux), le guide ● gyroscope fonctionne pendant la prise, et la photo prend réellement la durée de la pose (20 s → « Photo prise en ~20 s (pose appliquée 20,0 s) »). Comportement de vraie pose longue : les hautes lumières s'écrêtent, le bougé floute
 - Pose ≤ 2 s (ou non réglée) : inchangé — `takePhoto()` sur flux de capture dédié, aperçu intact

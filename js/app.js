@@ -18,6 +18,14 @@ function isChecked(id, def = true) {
 const LAST_KEY = 'agodeo-last-device';
 const printer = new CatPrinter();
 let currentSource = null;
+let imageBusy = false;
+function setImageBusy(b) {
+  imageBusy = b;
+  const inp = $('imageInput');
+  if (inp) inp.disabled = b;
+  const tab = $('tabImage');
+  if (tab) tab.disabled = b;
+}
 
 $('appVersion').textContent = `v${APP_VERSION}`;
 
@@ -476,7 +484,9 @@ $('btnFeed').addEventListener('click', async () => {
   }
 });
 
+let printBusy = false;
 async function printCurrent() {
+  if (printBusy) return;
   if (!currentSource) {
     notify('Rien à imprimer.');
     return;
@@ -485,6 +495,9 @@ async function printCurrent() {
     notify('❌ Imprimante non connectée — connecte-la dans l\'onglet 🖨️ Imprimante, puis re-prends la photo.');
     return;
   }
+  printBusy = true;
+  const isImage = currentSource.kind === 'image' || currentSource.kind === 'photobooth';
+  if (isImage) setImageBusy(true);
   try {
     $('btnPrint').disabled = true;
     const mode = currentMode();
@@ -499,6 +512,8 @@ async function printCurrent() {
   } catch (e) {
     notify(`❌ L'imprimante ne répond pas / erreur : ${e.message}`);
   } finally {
+    printBusy = false;
+    if (isImage) setImageBusy(false);
     refreshPreview();
   }
 }
@@ -1207,8 +1222,20 @@ $('qrText').addEventListener('input', refreshPreview);
 
 $('imageInput').addEventListener('change', async (e) => {
   const file = e.target.files[0];
-  if (file) currentSource = await imageSource(file);
-  refreshPreview();
+  if (!file || imageBusy) {
+    e.target.value = '';
+    return;
+  }
+  setImageBusy(true);
+  try {
+    currentSource = await imageSource(file);
+    refreshPreview();
+  } catch (err) {
+    notify(`❌ Image : ${err.message}`);
+  } finally {
+    setImageBusy(false);
+    e.target.value = '';
+  }
 });
 
 $('dither').addEventListener('change', refreshPreview);
