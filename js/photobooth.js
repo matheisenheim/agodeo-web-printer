@@ -154,6 +154,33 @@ export async function setTorch(on) {
   }
 }
 
+export async function captureStill(video, width = PRINT_WIDTH, mirror = false, filter = 'none') {
+  const track = video.srcObject ? video.srcObject.getVideoTracks()[0] : null;
+  if (track && typeof ImageCapture !== 'undefined') {
+    try {
+      const ic = new ImageCapture(track);
+      const blob = await ic.takePhoto();
+      const bmp = await createImageBitmap(blob);
+      const h = Math.max(1, Math.round((bmp.height * width) / bmp.width));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (filter && filter !== 'none' && 'filter' in ctx) ctx.filter = filter;
+      if (mirror) {
+        ctx.translate(width, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(bmp, 0, 0, width, h);
+      if (bmp.close) bmp.close();
+      return await createImageBitmap(canvas);
+    } catch (e) {
+      // repli sur la trame d'aperçu si takePhoto indisponible
+    }
+  }
+  return captureFrame(video, width, mirror, filter);
+}
+
 export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, filter = 'none') {
   const vw = video.videoWidth || width;
   const vh = video.videoHeight || Math.round((width * 3) / 4);

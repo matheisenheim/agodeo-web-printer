@@ -3,6 +3,13 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.5] — 2026-11-26
+- **Fix pose longue** : la photo de l'onglet 📷 passe par **`ImageCapture.takePhoto()`** (nouveau `captureStill()` dans `photobooth.js`, repli sur la trame d'aperçu si indisponible) au lieu de `drawImage(video)` — une pose de 8 s est maintenant réellement appliquée à la photo (la promesse ne rend qu'après la pose), puis redimensionnée à 384 px. Statut « Capture en cours… » pendant la pose
+
+## [3.2.4] — 2026-11-26
+- **Pose affichée en secondes** (toujours `x.xxx s` : si les capacités sont en ms, conversion /1000 pour l'affichage)
+- **Menu manuel plus user friendly** : panneau découpé en sections « Exposition » (mode + EV/pose/ISO), « Focus » (mode + focus manuel), « Couleurs & image » (WB + K + luminosité/contraste/saturation/netteté), titre + bouton **↺ Auto** en tête, sliders plus hauts (`accent-color` terracotta), libellés/valeurs plus lisibles
+
 ## [3.2.3] — 2026-11-26
 - **Pose (`exposureTime`) uniquement à la capture** : le slider de pose n'a plus aucun effet sur le flux live (il ne fait que mémoriser la valeur, libellé « Pose (capture seule) ») ; à chaque photo, `applyManualNow()` applique la pose (+ `exposureMode: manual`) 250 ms avant la capture, puis `restorePose()` remet la pose initiale juste après — tous les autres réglages (focus, EV, ISO, WB, image…) restent appliqués **en direct** sur l'aperçu
 

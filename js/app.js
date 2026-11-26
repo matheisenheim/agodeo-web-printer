@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, captureStill, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 import { FILTERS } from './filters.js';
 
@@ -1002,7 +1002,8 @@ $('btnShot').addEventListener('click', async () => {
     }
     await applyManualNow();
     await new Promise((r) => setTimeout(r, 250));
-    const bmp = await captureFrame($('cam2'), undefined, isFrontCam(), 'none');
+    $('camStatus').textContent = 'Capture en cours…';
+    const bmp = await captureStill($('cam2'), undefined, isFrontCam(), 'none');
     lastShot = bmp;
     await restorePose();
     const cv = $('shotCanvas');
