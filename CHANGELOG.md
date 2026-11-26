@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.18] — 2026-11-26
+- **Capteur de lumière ambiante (ALS) aussi utilisé pour la pose auto** : si le téléphone en a un, l'app lit le lux via `AmbientLightSensor` (Generic Sensor API, avec demande de permission `ambient-light-sensor`) et/ou l'événement `devicelight` (DeviceLightEvent, avec `requestPermission` sur iOS). La pose auto = **max(pose déduite de la luma caméra, pose déduite du lux ambiant)** — mapping log : 0 lx → pose max (8 s), ≥ 1000 lx → pose min. Le lux courant s'affiche à côté de la pose (« 3.20 s (42 lx) »). Sans capteur ALS, retombe sur la luma caméra seule
+
 ## [3.2.17] — 2026-11-26
 - **Pose auto selon la luminosité** (menu manuel ⚙️, case à cocher dans « Exposition ») : quand elle est active, le slider Pose est verrouillé et sa valeur affichée est **mesurée en direct** toutes les 500 ms — luminance moyenne de l'aperçu (`measureLuma`, canvas 64×36, coefficients Rec.709) → pose = min + (max−min)·(1−L/255)², max plafonné à 8 s (scène sombre → pose longue). À la capture : pose > 2 s → accumulation pendant la durée mesurée ; pose ≤ 2 s → `exposureTime` injecté dans les contraintes du flux de capture dédié. Le flux d'aperçu n'est jamais modifié (visée 100 % live)
 - **Accumulation : moyenne pondérée au lieu de somme additive pure** — les trames sont accumulées avec alpha 1/N (pas d'écrêtage intermédiaire) puis un gain `brightness(pose / pose-auto)` borné ×1…×8 est appliqué en sortie (≈ vraie pose longue, sans tout brûler)

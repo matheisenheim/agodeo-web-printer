@@ -893,6 +893,7 @@ function camTabUI() {
 function stopCamTab() {
   stopCamera($('cam2'));
   stopLumaSampler();
+  stopAls();
   camTabRunning = false;
   camTabUI();
   $('camStatus').textContent = '';
@@ -914,6 +915,7 @@ async function startCamTab() {
     await refreshCameras();
     initialSettings = trackSettings();
     buildManualPanel();
+    startAls().catch(() => {});
     if (poseAutoOn) startLumaSampler();
     const zc = zoomCaps();
     const zs = $('zoomSlider');
@@ -988,15 +990,77 @@ let centerOn = false;
 let poseAutoOn = false;
 let autoPoseSec = 0;
 let lumaTimer = null;
+let alsLux = null;
+let alsSensor = null;
+let alsHandler = null;
 
-function lumaToPoseSeconds(luma) {
+function poseRangeSeconds() {
   const caps = trackCaps();
   const c = caps.exposureTime;
-  if (!c || c.min === undefined) return 0;
-  const secMin = exposureSeconds(caps, c.min);
-  const secMax = Math.min(exposureSeconds(caps, c.max), 8);
+  if (!c || c.min === undefined) return null;
+  return {
+    min: exposureSeconds(caps, c.min),
+    max: Math.min(exposureSeconds(caps, c.max), 8),
+  };
+}
+
+function lumaToPoseSeconds(luma) {
+  const r = poseRangeSeconds();
+  if (!r) return 0;
   const t = Math.pow(Math.max(0, Math.min(1, 1 - (luma || 0) / 255)), 2);
-  return secMin + (secMax - secMin) * t;
+  return r.min + (r.max - r.min) * t;
+}
+
+function luxToPoseSeconds(lux) {
+  const r = poseRangeSeconds();
+  if (!r) return 0;
+  const t = Math.pow(1 - Math.max(0, Math.min(1, Math.log10(lux + 1) / Math.log10(1001))), 2);
+  return r.min + (r.max - r.min) * t;
+}
+
+function computeAutoPose() {
+  const L = measureLuma($('cam2'));
+  const pL = L === null ? 0 : lumaToPoseSeconds(L);
+  const pX = alsLux === null ? 0 : luxToPoseSeconds(alsLux);
+  autoPoseSec = Math.max(pL, pX);
+  return autoPoseSec;
+}
+
+async function startAls() {
+  try {
+    if ('AmbientLightSensor' in window) {
+      try {
+        const perm = await navigator.permissions.query({ name: 'ambient-light-sensor' });
+        if (perm.state === 'granted' || perm.state === 'prompt') {
+          alsSensor = new AmbientLightSensor({ frequency: 2 });
+          alsSensor.addEventListener('reading', () => { alsLux = alsSensor.illuminance; });
+          alsSensor.start();
+        }
+      } catch (e) {}
+    }
+  } catch (e) {}
+  if ('DeviceLightEvent' in window && !alsHandler) {
+    try {
+      if (DeviceLightEvent.requestPermission) {
+        const r = await DeviceLightEvent.requestPermission();
+        if (r !== 'granted') return;
+      }
+    } catch (e) {}
+    alsHandler = (e) => { alsLux = e.value; };
+    window.addEventListener('devicelight', alsHandler);
+  }
+}
+
+function stopAls() {
+  if (alsSensor) {
+    try { alsSensor.stop(); } catch (e) {}
+    alsSensor = null;
+  }
+  if (alsHandler) {
+    window.removeEventListener('devicelight', alsHandler);
+    alsHandler = null;
+  }
+  alsLux = null;
 }
 
 function updatePoseAutoLabel() {
@@ -1006,16 +1070,15 @@ function updatePoseAutoLabel() {
   const c = caps.exposureTime;
   if (!c || c.min === undefined) return;
   const raw = c.max >= 10 ? autoPoseSec * 1000 : autoPoseSec;
-  s.val.textContent = s.fmt(raw);
+  s.val.textContent = s.fmt(raw) + (alsLux !== null ? ` (${Math.round(alsLux)} lx)` : '');
 }
 
 function startLumaSampler() {
   stopLumaSampler();
   lumaTimer = setInterval(() => {
     if (!camTabRunning || !poseAutoOn) return;
-    const L = measureLuma($('cam2'));
-    if (L === null) return;
-    autoPoseSec = lumaToPoseSeconds(L);
+    if (measureLuma($('cam2')) === null && alsLux === null) return;
+    computeAutoPose();
     updatePoseAutoLabel();
   }, 500);
 }
@@ -1036,8 +1099,12 @@ $('poseAutoLuma').addEventListener('change', (e) => {
       ps.inp.disabled = !ps.supported;
     }
   }
-  if (poseAutoOn && camTabRunning) startLumaSampler();
-  else stopLumaSampler();
+  if (poseAutoOn && camTabRunning) {
+    startAls().catch(() => {});
+    startLumaSampler();
+  } else {
+    stopLumaSampler();
+  }
 });
 
 let orientRAF = null;
@@ -1163,9 +1230,7 @@ $('btnShot').addEventListener('click', async () => {
     const obj = collectDirtyConstraints();
     let poseReq = 0;
     if (poseAutoOn) {
-      const L = measureLuma($('cam2'));
-      if (L !== null) autoPoseSec = lumaToPoseSeconds(L);
-      poseReq = autoPoseSec;
+      poseReq = computeAutoPose();
       const c = trackCaps().exposureTime;
       if (c && c.min !== undefined && poseReq > 0) {
         obj.exposureTime = c.max >= 10 ? poseReq * 1000 : poseReq;
