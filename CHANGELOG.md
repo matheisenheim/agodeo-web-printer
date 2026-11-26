@@ -3,6 +3,13 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.8] — 2026-11-26
+- **Repère centre ◎** (bouton ◎ dans l'onglet 📷) : cercle jaune + point fixe **au centre de l'aperçu live** (overlay DOM `#centerMark`) ; si activé, le cercle+point sont aussi **dessinés au centre de la photo capturée** (`drawCenterMark` dans `captureStill`/`captureFrame`, paramètre `markCenter`) → gravé dans la photo téléchargée/imprimée. Idéal pour cadrer sans bouger le téléphone
+
+## [3.2.7] — 2026-11-26
+- **Compte à rebours de pose** : si la pose réglée (slider « Pose (capture seule) ») dépasse 2 s, un **gros chiffre plein écran** (`#shotCountdown`, 8.0 → 0.0) défile pendant la capture `takePhoto()` ; statut « Pose 8.0 s… »
+- **Le menu manuel (⚙️) se ferme automatiquement** quand on appuie sur 📸
+
 ## [3.2.6] — 2026-11-26
 - **Fix virage bleu de la balance des blancs** : à la capture, seuls les réglages **effectivement modifiés par l'utilisateur** (flag dirty sur sliders et sélecteurs de mode) sont appliqués — avant, `applyManualNow()` forçait tous les modes en manuel (WB à la valeur K courante du capteur → bleu). Les modes non touchés restent en auto (`continuous`)
 - **Pose** : slider désactivé avec mention « non supportée » si `capabilities.exposureTime` absent ou min==max (téléphone qui ne permet pas la pose manuelle)

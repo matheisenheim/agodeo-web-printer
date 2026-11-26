@@ -154,7 +154,22 @@ export async function setTorch(on) {
   }
 }
 
-export async function captureStill(video, width = PRINT_WIDTH, mirror = false, filter = 'none') {
+function drawCenterMark(ctx, w, h) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const r = Math.max(20, w * 0.09);
+  ctx.strokeStyle = 'rgba(255, 213, 74, 0.95)';
+  ctx.lineWidth = Math.max(2, w * 0.005);
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = '#ffd54a';
+  ctx.beginPath();
+  ctx.arc(cx, cy, Math.max(3, w * 0.012), 0, Math.PI * 2);
+  ctx.fill();
+}
+
+export async function captureStill(video, width = PRINT_WIDTH, mirror = false, filter = 'none', markCenter = false) {
   const track = video.srcObject ? video.srcObject.getVideoTracks()[0] : null;
   if (track && typeof ImageCapture !== 'undefined') {
     try {
@@ -173,15 +188,20 @@ export async function captureStill(video, width = PRINT_WIDTH, mirror = false, f
       }
       ctx.drawImage(bmp, 0, 0, width, h);
       if (bmp.close) bmp.close();
+      if (markCenter) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.filter = 'none';
+        drawCenterMark(ctx, width, h);
+      }
       return await createImageBitmap(canvas);
     } catch (e) {
       // repli sur la trame d'aperçu si takePhoto indisponible
     }
   }
-  return captureFrame(video, width, mirror, filter);
+  return captureFrame(video, width, mirror, filter, markCenter);
 }
 
-export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, filter = 'none') {
+export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, filter = 'none', markCenter = false) {
   const vw = video.videoWidth || width;
   const vh = video.videoHeight || Math.round((width * 3) / 4);
   const h = Math.max(1, Math.round((vh * width) / vw));
@@ -195,5 +215,10 @@ export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, f
     ctx.scale(-1, 1);
   }
   ctx.drawImage(video, 0, 0, width, h);
+  if (markCenter) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.filter = 'none';
+    drawCenterMark(ctx, width, h);
+  }
   return createImageBitmap(canvas);
 }

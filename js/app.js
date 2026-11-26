@@ -962,6 +962,13 @@ $('zoomSlider').addEventListener('input', async () => {
 
 let camTimerOn = false;
 let camGridOn = false;
+let centerOn = false;
+
+$('btnCenter').addEventListener('click', () => {
+  centerOn = !centerOn;
+  $('btnCenter').classList.toggle('on', centerOn);
+  $('centerMark').hidden = !centerOn;
+});
 
 $('btnTimer2').addEventListener('click', () => {
   camTimerOn = !camTimerOn;
@@ -1042,7 +1049,7 @@ $('btnShot').addEventListener('click', async () => {
     }
     await new Promise((r) => setTimeout(r, 250));
     $('camStatus').textContent = pose > 2 ? `Pose ${pose.toFixed(1)} s…` : 'Capture en cours…';
-    const bmp = await captureStill($('cam2'), undefined, isFrontCam(), 'none');
+    const bmp = await captureStill($('cam2'), undefined, isFrontCam(), 'none', centerOn);
     lastShot = bmp;
     await restorePose();
     const cv = $('shotCanvas');
