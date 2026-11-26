@@ -3,6 +3,10 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.14] — 2026-11-26
+- **Pose longue émulée par accumulation des trames live (onglet 📷)** : sur ce téléphone, `takePhoto()` ignore la pose manuelle du track (photo en 2,6 s malgré « pose appliquée 19,4 s ») et le HAL caméra partagé blanchissait l'aperçu pendant la pose. Si la pose réglée dépasse 2 s, la photo est désormais construite par **accumulation additive des trames de l'aperçu live** (`accumulateLongExposure`, composite `lighter` sur canvas, ~10 trames/s) pendant toute la durée de la pose : **la visée reste 100 % live** (jamais blanc, aucun réglage appliqué au flux), le guide ● gyroscope fonctionne pendant la prise, et la photo prend réellement la durée de la pose (20 s → « Photo prise en ~20 s (pose appliquée 20,0 s) »). Comportement de vraie pose longue : les hautes lumières s'écrêtent, le bougé floute
+- Pose ≤ 2 s (ou non réglée) : inchangé — `takePhoto()` sur flux de capture dédié, aperçu intact
+
 ## [3.2.13] — 2026-11-26
 - **Fix pose longue < 1 s (onglet 📷)** : les contraintes `advanced` passées à `getUserMedia` sont ignorées/clampées par certains drivers — la pose est maintenant **aussi ré-appliquée sur le track du flux de capture** via `applyConstraints({ advanced })`, et l'app **attend que `getSettings().exposureTime` atteigne la valeur demandée** (jusqu'à 2 s) avant `takePhoto()` : une pose de 20 s bloque réellement la capture ~20 s (ou la valeur max du driver si elle cape). Le flux d'aperçu reste intact (visée live, jamais blanc)
 - **Fix z-index plein écran** : `.cam-controls` (menu manuel ⚙️ compris) passe en `z-index: 20`, au-dessus des overlays de la vidéo (guide ●, grille, compte à rebours) — quand le menu manuel et le guide sont affichés ensemble, le guide apparaît **derrière** le menu

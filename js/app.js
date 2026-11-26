@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, captureStill, blobToStill, openCaptureStream, captureBlobFromTrack, applyAdvancedToTrack, waitAppliedExposure, stopStream, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, captureStill, blobToStill, openCaptureStream, captureBlobFromTrack, applyAdvancedToTrack, waitAppliedExposure, accumulateLongExposure, stopStream, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 import { FILTERS } from './filters.js';
 
@@ -1085,42 +1085,50 @@ $('btnShot').addEventListener('click', async () => {
       }
     }
     const obj = collectDirtyConstraints();
-    const variants = Object.keys(obj).length ? [[obj], []] : [[]];
-    for (const [adv] of variants) {
-      try {
-        capStream = await openCaptureStream({ deviceId: currentDeviceId(), media: camMedia(), advanced: adv });
-        const track = capStream.getVideoTracks()[0];
-        const caps = track.getCapabilities ? track.getCapabilities() : {};
-        if (Object.keys(adv).length) await applyAdvancedToTrack(track, adv);
-        let rawApplied;
-        if (adv.exposureTime !== undefined) {
-          rawApplied = await waitAppliedExposure(track, adv.exposureTime);
-        } else {
-          const st = track.getSettings ? track.getSettings() : {};
-          rawApplied = st.exposureTime;
+    const poseReq = obj.exposureTime !== undefined ? exposureSeconds(trackCaps(), obj.exposureTime) : 0;
+    if (poseReq > 2) {
+      realPose = poseReq;
+      cdTimer = startShotCountdown(realPose);
+      $('camStatus').textContent = `Pose ${realPose.toFixed(1)} s…`;
+      bmp = await accumulateLongExposure($('cam2'), realPose, isFrontCam(), 'none');
+    } else {
+      const variants = Object.keys(obj).length ? [[obj], []] : [[]];
+      for (const [adv] of variants) {
+        try {
+          capStream = await openCaptureStream({ deviceId: currentDeviceId(), media: camMedia(), advanced: adv });
+          const track = capStream.getVideoTracks()[0];
+          const caps = track.getCapabilities ? track.getCapabilities() : {};
+          if (Object.keys(adv).length) await applyAdvancedToTrack(track, adv);
+          let rawApplied;
+          if (adv.exposureTime !== undefined) {
+            rawApplied = await waitAppliedExposure(track, adv.exposureTime);
+          } else {
+            const st = track.getSettings ? track.getSettings() : {};
+            rawApplied = st.exposureTime;
+          }
+          realPose = exposureSeconds(caps, rawApplied !== undefined ? rawApplied : adv.exposureTime);
+          if (realPose > 2) cdTimer = startShotCountdown(realPose);
+          $('camStatus').textContent = realPose > 2 ? `Pose ${realPose.toFixed(1)} s…` : 'Capture en cours…';
+          const blob = await captureBlobFromTrack(track);
+          bmp = await blobToStill(blob, undefined, isFrontCam(), 'none');
+          break;
+        } catch (e) {
+          if (cdTimer) { clearInterval(cdTimer); cdTimer = null; }
+          $('shotCountdown').hidden = true;
+          stopStream(capStream);
+          capStream = null;
+          bmp = null;
         }
-        realPose = exposureSeconds(caps, rawApplied !== undefined ? rawApplied : adv.exposureTime);
-        if (realPose > 2) cdTimer = startShotCountdown(realPose);
-        $('camStatus').textContent = realPose > 2 ? `Pose ${realPose.toFixed(1)} s…` : 'Capture en cours…';
-        const blob = await captureBlobFromTrack(track);
-        bmp = await blobToStill(blob, undefined, isFrontCam(), 'none');
-        break;
-      } catch (e) {
-        if (cdTimer) { clearInterval(cdTimer); cdTimer = null; }
-        $('shotCountdown').hidden = true;
-        stopStream(capStream);
-        capStream = null;
-        bmp = null;
       }
-    }
-    if (!bmp) {
-      await applyManualNow();
-      realPose = poseSeconds();
-      if (realPose > 2) cdTimer = startShotCountdown(realPose);
-      await new Promise((r) => setTimeout(r, 250));
-      $('camStatus').textContent = realPose > 2 ? `Pose ${realPose.toFixed(1)} s…` : 'Capture en cours…';
-      bmp = await captureStill($('cam2'), undefined, isFrontCam(), 'none');
-      await restorePose();
+      if (!bmp) {
+        await applyManualNow();
+        realPose = poseSeconds();
+        if (realPose > 2) cdTimer = startShotCountdown(realPose);
+        await new Promise((r) => setTimeout(r, 250));
+        $('camStatus').textContent = realPose > 2 ? `Pose ${realPose.toFixed(1)} s…` : 'Capture en cours…';
+        bmp = await captureStill($('cam2'), undefined, isFrontCam(), 'none');
+        await restorePose();
+      }
     }
     lastShot = bmp;
     const cv = $('shotCanvas');

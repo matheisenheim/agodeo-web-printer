@@ -242,6 +242,44 @@ export async function waitAppliedExposure(track, target, timeoutMs = 2000) {
   return last;
 }
 
+export async function accumulateLongExposure(video, seconds, mirror = false, filter = 'none', accWidth = 640) {
+  const vw = video.videoWidth || 1280;
+  const vh = video.videoHeight || Math.round((vw * 3) / 4);
+  const aw = accWidth;
+  const ah = Math.max(1, Math.round((vh * aw) / vw));
+  const acc = document.createElement('canvas');
+  acc.width = aw;
+  acc.height = ah;
+  const actx = acc.getContext('2d');
+  actx.globalCompositeOperation = 'lighter';
+  const dur = seconds * 1000;
+  const t0 = performance.now();
+  await new Promise((resolve) => {
+    const step = () => {
+      if (performance.now() - t0 >= dur || !video.srcObject) {
+        resolve();
+        return;
+      }
+      if (video.readyState >= 2) actx.drawImage(video, 0, 0, aw, ah);
+      setTimeout(step, 100);
+    };
+    step();
+  });
+  const width = PRINT_WIDTH;
+  const h = Math.max(1, Math.round((ah * width) / aw));
+  const out = document.createElement('canvas');
+  out.width = width;
+  out.height = h;
+  const octx = out.getContext('2d');
+  if (filter && filter !== 'none' && 'filter' in octx) octx.filter = filter;
+  if (mirror) {
+    octx.translate(width, 0);
+    octx.scale(-1, 1);
+  }
+  octx.drawImage(acc, 0, 0, width, h);
+  return createImageBitmap(out);
+}
+
 export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, filter = 'none') {
   const vw = video.videoWidth || width;
   const vh = video.videoHeight || Math.round((width * 3) / 4);
