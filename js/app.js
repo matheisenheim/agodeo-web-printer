@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 
 const $ = (id) => document.getElementById(id);
@@ -395,6 +395,7 @@ $('btnCamSwitch').addEventListener('click', async () => {
   try {
     await startCamera($('cam'), selectedCamId);
     updateCamSwitchLabel();
+    updateTorchButton();
   } catch (e) {
     $('btnCapture').disabled = true;
     notify(`❌ Caméra : ${e.message}`);
@@ -412,7 +413,23 @@ function stopBoothCamera() {
   $('btnCam').textContent = 'Démarrer la caméra';
   $('btnCapture').disabled = true;
   updateCamSwitchLabel();
+  $('btnTorch').hidden = true;
 }
+
+function updateTorchButton() {
+  const b = $('btnTorch');
+  if (!b) return;
+  const supported = cameraRunning() && torchSupported();
+  b.hidden = !supported;
+  b.classList.toggle('on', supported && torchIsOn());
+}
+
+$('btnTorch').addEventListener('click', async () => {
+  const wantOn = !(cameraRunning() && torchIsOn());
+  const ok = await setTorch(wantOn);
+  if (!ok) notify('❌ Flash (torche) non disponible sur cette caméra.');
+  updateTorchButton();
+});
 
 function facingTextFor(facing, label) {
   if (facing === 'environment' || /(back|arrière|rear)/i.test(label || '')) return 'Dos';
@@ -438,6 +455,7 @@ $('btnCam').addEventListener('click', async () => {
     await startCamera($('cam'), selectedCamId || undefined);
     await refreshCameras();
     updateCamSwitchLabel();
+    updateTorchButton();
     $('btnCam').textContent = 'Arrêter la caméra';
     $('btnCapture').disabled = false;
   } catch (e) {

@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.11] — 2026-11-26
+- **Flash / torche de la caméra** : bouton 🔦 en haut à gauche du photobooth (visible uniquement si la caméra active expose la capacité `torch`) — fonctionne sur téléphone Android (Chrome) et sur les webcams PC qui le supportent, via `applyConstraints({ advanced: [{ torch }] })`
+
 ## [3.0.10] — 2026-11-26
 - Photobooth : barre du bas réorganisée — **📸 au centre, 50 % plus grand** (114 px), « Démarrer la caméra » à **gauche** et 🔄 à **droite**, les 3 alignés tout en bas
 

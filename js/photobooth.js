@@ -47,6 +47,32 @@ export function currentDeviceId() {
   return t.getSettings().deviceId || null;
 }
 
+export function torchSupported() {
+  if (!stream) return false;
+  const t = stream.getVideoTracks()[0];
+  const caps = t && t.getCapabilities ? t.getCapabilities() : {};
+  return !!caps.torch;
+}
+
+export function torchIsOn() {
+  if (!stream) return false;
+  const t = stream.getVideoTracks()[0];
+  const s = t && t.getSettings ? t.getSettings() : {};
+  return !!s.torch;
+}
+
+export async function setTorch(on) {
+  if (!stream) return false;
+  const t = stream.getVideoTracks()[0];
+  if (!t || !t.applyConstraints || !torchSupported()) return false;
+  try {
+    await t.applyConstraints({ advanced: [{ torch: on }] });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 export async function captureFrame(video, width = PRINT_WIDTH, mirror = false) {
   const vw = video.videoWidth || width;
   const vh = video.videoHeight || Math.round((width * 3) / 4);
