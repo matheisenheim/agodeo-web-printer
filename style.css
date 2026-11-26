@@ -163,7 +163,6 @@ input[type="number"] { width: 70px; border: 1px solid #ccc; border-radius: 6px; 
   background: #e53e3e;
   border: 3px solid rgba(255, 255, 255, 0.7);
 }
-#boothStatus { text-align: center; flex: 1; align-self: center; }
 
 #popup {
   position: fixed;
@@ -216,7 +215,6 @@ body.booth .booth-controls {
   color: #fff;
   padding: 8px 14px calc(12px + env(safe-area-inset-bottom));
 }
-body.booth .booth-options { justify-content: center; }
 body.booth .status { color: #e2e8f0; }
 body.booth select, body.booth input[type="text"] { color: #1c1e21; }
 body.booth label { color: #e2e8f0; font-size: 13px; }

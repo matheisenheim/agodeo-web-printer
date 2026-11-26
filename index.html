@@ -118,7 +118,6 @@
         <button id="btnPrint" disabled>Imprimer</button>
         <button id="btnTestCard">Page de test</button>
       </div>
-      <div id="printStatus" class="status"></div>
     </div>
   </section>
 
@@ -129,19 +128,12 @@
       <button id="btnExitBooth" title="Quitter le photobooth (retour à l'onglet précédent)">✕ Quitter</button>
     </div>
     <div class="booth-controls">
-      <div class="row booth-options">
-        <label><input id="pbFrame" type="checkbox" checked> Cadre + date</label>
-        <input id="pbLabel" type="text" value="Souriez !" style="max-width:150px">
-        <label><input id="pbMirror" type="checkbox" checked> Miroir</label>
-        <label><input id="pbTimer" type="checkbox" checked> Minuteur 3-2-1</label>
-      </div>
       <div class="booth-bar">
         <div class="booth-left">
           <button id="btnCam">Démarrer la caméra</button>
           <button id="btnCamSwitch" disabled>🔄 Changer de caméra</button>
         </div>
-        <div id="boothStatus" class="status"></div>
-        <button id="btnCapture" disabled title="Prendre la photo (imprime directement)">📸</button>
+        <button id="btnCapture" disabled title="Prendre la photo (minuteur 3-2-1, miroir, imprime directement)">📸</button>
       </div>
     </div>
   </section>

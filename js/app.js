@@ -53,14 +53,7 @@ function currentDither() {
   return false;
 }
 
-function setPrintStatus(msg) {
-  const ps = $('printStatus');
-  const bs = $('boothStatus');
-  if (ps) ps.textContent = msg;
-  if (bs) bs.textContent = msg;
-}
-
-function showError(msg) {
+function notify(msg) {
   $('popupMsg').textContent = msg;
   $('popup').hidden = false;
 }
@@ -277,9 +270,9 @@ $('btnInfo').addEventListener('click', async () => {
 $('btnCancel').addEventListener('click', async () => {
   try {
     await printer.cancel();
-    setPrintStatus('Annulation envoyée (AC).');
+    notify('Annulation envoyée (AC).');
   } catch (e) {
-    setPrintStatus(`Erreur : ${e.message}`);
+    notify(`Erreur : ${e.message}`);
   }
 });
 
@@ -315,46 +308,40 @@ $('btnUsbPick').addEventListener('click', async () => {
 $('btnFeed').addEventListener('click', async () => {
   try {
     await printer.feed(Number(val('feedSteps', '50')) || 50);
-    setPrintStatus('Papier avancé.');
+    notify('Papier avancé.');
   } catch (e) {
-    setPrintStatus(`Erreur : ${e.message}`);
+    notify(`Erreur : ${e.message}`);
   }
 });
 
 async function printCurrent() {
   if (!currentSource) {
-    setPrintStatus('Rien à imprimer.');
+    notify('Rien à imprimer.');
     return;
   }
   if (!printer.connected) {
-    showError('❌ Imprimante non connectée — connecte-la dans l\'onglet 🖨️ Imprimante, puis re-prends la photo.');
+    notify('❌ Imprimante non connectée — connecte-la dans l\'onglet 🖨️ Imprimante, puis re-prends la photo.');
     return;
   }
   try {
     $('btnPrint').disabled = true;
     const mode = currentMode();
     const lines = renderSourceToLines(currentSource, { mode, dither: currentDither() });
-    setPrintStatus(`Impression de ${lines.length} lignes (mode ${mode === 2 ? '4 bits / 16 gris — HD' : '1 bit mono'})…`);
+    notify(`Impression de ${lines.length} lignes (mode ${mode === 2 ? '4 bits / 16 gris — HD' : '1 bit mono'})…`);
     const n = await printer.printLines(lines, {
       energy: Number(val('energy', '49152')),
       feed: isChecked('autoFeed', false) ? Number(val('feedSteps', '50')) || 50 : 0,
       mode,
     });
-    setPrintStatus(`✅ Terminé : ${n} lignes envoyées.`);
+    notify(`✅ Impression réussie : ${n} lignes envoyées.`);
   } catch (e) {
-    showError(`❌ L'imprimante ne répond pas / erreur : ${e.message}`);
+    notify(`❌ L'imprimante ne répond pas / erreur : ${e.message}`);
   } finally {
     refreshPreview();
   }
 }
 
 $('btnPrint').addEventListener('click', printCurrent);
-
-function applyMirror() {
-  $('cam').classList.toggle('mirrored', isChecked('pbMirror', true));
-}
-
-$('pbMirror').addEventListener('change', applyMirror);
 
 function countdown(n) {
   return new Promise((resolve) => {
@@ -398,11 +385,10 @@ $('btnCamSwitch').addEventListener('click', async () => {
   stopCamera($('cam'));
   try {
     await startCamera($('cam'), selectedCamId);
-    applyMirror();
     updateCamSwitchLabel();
   } catch (e) {
     $('btnCapture').disabled = true;
-    showError(`❌ Caméra : ${e.message}`);
+    notify(`❌ Caméra : ${e.message}`);
   }
 });
 
@@ -442,25 +428,22 @@ $('btnCam').addEventListener('click', async () => {
     }
     await startCamera($('cam'), selectedCamId || undefined);
     await refreshCameras();
-    applyMirror();
     updateCamSwitchLabel();
     $('btnCam').textContent = 'Arrêter la caméra';
     $('btnCapture').disabled = false;
   } catch (e) {
-    showError(`❌ Caméra : ${e.message}`);
+    notify(`❌ Caméra : ${e.message}`);
   }
 });
 
 $('btnCapture').addEventListener('click', async () => {
   try {
-    if (isChecked('pbTimer', true)) await countdown(3);
-    const bmp = await captureFrame($('cam'), undefined, isChecked('pbMirror', true));
-    currentSource = isChecked('pbFrame', true)
-      ? { kind: 'photobooth', bmp, label: val('pbLabel', 'Souriez !') }
-      : { kind: 'image', bmp };
+    await countdown(3);
+    const bmp = await captureFrame($('cam'), undefined, true);
+    currentSource = { kind: 'image', bmp };
     await printCurrent();
   } catch (e) {
-    showError(`❌ Erreur capture : ${e.message}`);
+    notify(`❌ Erreur capture : ${e.message}`);
   }
 });
 
@@ -468,10 +451,10 @@ $('btnTestCard').addEventListener('click', async () => {
   currentSource = testCardSource();
   refreshPreview();
   if (printer.connected) {
-    setPrintStatus('Impression de la page de test…');
+    notify('Impression de la page de test…');
     await printCurrent();
   } else {
-    setPrintStatus('Page de test prête dans l\'aperçu — connecte l\'imprimante puis « Imprimer ».');
+    notify('Page de test prête dans l\'aperçu — connecte l\'imprimante puis « Imprimer ».');
   }
 });
 
@@ -491,9 +474,9 @@ async function labSend(cmdHex, payloadHex) {
     const payload = parseHex(payloadHex);
     if (cmd === undefined || Number.isNaN(cmd)) throw new Error('commande hex invalide');
     await printer.send(cmd, payload);
-    setPrintStatus(`envoyé : cmd=0x${cmd.toString(16)} payload=${payloadHex || '(vide)'}`);
+    notify(`envoyé : cmd=0x${cmd.toString(16)} payload=${payloadHex || '(vide)'}`);
   } catch (e) {
-    setPrintStatus(`Labo : ${e.message}`);
+    notify(`Labo : ${e.message}`);
   }
 }
 
