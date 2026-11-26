@@ -1,4 +1,4 @@
-const CACHE = 'agodeo-web-printer-v3.0.19';
+const CACHE = 'agodeo-web-printer-v3.0.20';
 const ASSETS = [
   './',
   'index.html',
@@ -16,11 +16,6 @@ const ASSETS = [
   'js/filters.js',
   'vendor/qrcode.mjs',
   'vendor/qrcode_UTF8.mjs',
-  'vendor/twemoji/1f385.svg',
-  'vendor/twemoji/1f384.svg',
-  'vendor/twemoji/2744.svg',
-  'vendor/twemoji/1f431.svg',
-  'vendor/twemoji/1f436.svg',
 ];
 
 self.addEventListener('install', (e) => {
