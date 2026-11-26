@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.28] — 2026-11-26
+- **Bouton 📸 visiblement grisé quand bloqué** : le style rouge `#btnCapture` (sélecteur par ID) écrasait la règle générique `button:disabled` → règle dédiée `#btnCapture:disabled` (gris `#b9a58f`, opacité 0,55, bord affaibli) + idem pour `#btnShot` en plein écran (`body.camfs #btnShot:disabled`)
+
 ## [3.2.27] — 2026-11-26
 - **Photobooth : 📸 bloqué pendant l'impression** — tant qu'une impression est en cours (`printBusy`), le bouton 📸 est désactivé (et le handler ignore le clic, même le minuteur 3-2-1 ne démarre pas) ; il est réactivé à la fin de l'impression (ou à l'arrêt de la caméra)
 

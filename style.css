@@ -486,6 +486,18 @@ body.flashing #countdown { color: #000; text-shadow: 0 0 14px rgba(255, 255, 255
   background: var(--danger);
   border: 3px solid rgba(255, 255, 255, 0.7);
 }
+#btnCapture:disabled {
+  background: #b9a58f;
+  border-color: rgba(255, 255, 255, 0.35);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+body.camfs #btnShot:disabled {
+  background: #b9a58f;
+  border-color: rgba(255, 255, 255, 0.35);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 
 #popup {
   position: fixed;
