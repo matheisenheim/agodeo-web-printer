@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame, captureStill, blobToStill, openCaptureStream, captureBlobFromTrack, applyAdvancedToTrack, waitAppliedExposure, accumulateLongExposure, stopStream, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, captureStill, blobToStill, openCaptureStream, captureBlobFromTrack, applyAdvancedToTrack, waitAppliedExposure, accumulateLongExposure, measureLuma, stopStream, listCameras, currentFacing, currentDeviceId, torchSupported, torchIsOn, setTorch, setFocusMode, focusAt, zoomCaps, setZoom, trackCaps, trackSettings, applyAdvanced } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 import { FILTERS } from './filters.js';
 
@@ -808,9 +808,14 @@ function buildManualPanel() {
     row.appendChild(val);
     const rows = $(MANUAL_GROUPS[p.group] || 'rowsImage');
     if (rows) rows.appendChild(row);
-    manualSliders[p.key] = { inp, val, fmt, dirty: false };
+    manualSliders[p.key] = { inp, val, fmt, dirty: false, supported };
   }
   buildResFps(caps);
+  const pa = $('poseAutoLuma');
+  const ec = caps.exposureTime;
+  if (pa) pa.disabled = !(ec && ec.min !== undefined && ec.min < ec.max);
+  const ps = manualSliders.exposureTime;
+  if (ps && poseAutoOn) ps.inp.disabled = true;
 }
 
 for (const [id, key] of MODE_SELECTS) {
@@ -887,6 +892,7 @@ function camTabUI() {
 
 function stopCamTab() {
   stopCamera($('cam2'));
+  stopLumaSampler();
   camTabRunning = false;
   camTabUI();
   $('camStatus').textContent = '';
@@ -908,6 +914,7 @@ async function startCamTab() {
     await refreshCameras();
     initialSettings = trackSettings();
     buildManualPanel();
+    if (poseAutoOn) startLumaSampler();
     const zc = zoomCaps();
     const zs = $('zoomSlider');
     if (zc) {
@@ -978,6 +985,60 @@ $('zoomSlider').addEventListener('input', async () => {
 let camTimerOn = false;
 let camGridOn = false;
 let centerOn = false;
+let poseAutoOn = false;
+let autoPoseSec = 0;
+let lumaTimer = null;
+
+function lumaToPoseSeconds(luma) {
+  const caps = trackCaps();
+  const c = caps.exposureTime;
+  if (!c || c.min === undefined) return 0;
+  const secMin = exposureSeconds(caps, c.min);
+  const secMax = Math.min(exposureSeconds(caps, c.max), 8);
+  const t = Math.pow(Math.max(0, Math.min(1, 1 - (luma || 0) / 255)), 2);
+  return secMin + (secMax - secMin) * t;
+}
+
+function updatePoseAutoLabel() {
+  const s = manualSliders.exposureTime;
+  if (!s) return;
+  const caps = trackCaps();
+  const c = caps.exposureTime;
+  if (!c || c.min === undefined) return;
+  const raw = c.max >= 10 ? autoPoseSec * 1000 : autoPoseSec;
+  s.val.textContent = s.fmt(raw);
+}
+
+function startLumaSampler() {
+  stopLumaSampler();
+  lumaTimer = setInterval(() => {
+    if (!camTabRunning || !poseAutoOn) return;
+    const L = measureLuma($('cam2'));
+    if (L === null) return;
+    autoPoseSec = lumaToPoseSeconds(L);
+    updatePoseAutoLabel();
+  }, 500);
+}
+
+function stopLumaSampler() {
+  if (lumaTimer) clearInterval(lumaTimer);
+  lumaTimer = null;
+}
+
+$('poseAutoLuma').addEventListener('change', (e) => {
+  poseAutoOn = e.target.checked;
+  const ps = manualSliders.exposureTime;
+  if (ps) {
+    if (poseAutoOn) {
+      ps.dirty = false;
+      ps.inp.disabled = true;
+    } else {
+      ps.inp.disabled = !ps.supported;
+    }
+  }
+  if (poseAutoOn && camTabRunning) startLumaSampler();
+  else stopLumaSampler();
+});
 
 let orientRAF = null;
 let capturing = false;
@@ -1100,12 +1161,26 @@ $('btnShot').addEventListener('click', async () => {
       }
     }
     const obj = collectDirtyConstraints();
-    const poseReq = obj.exposureTime !== undefined ? exposureSeconds(trackCaps(), obj.exposureTime) : 0;
+    let poseReq = 0;
+    if (poseAutoOn) {
+      const L = measureLuma($('cam2'));
+      if (L !== null) autoPoseSec = lumaToPoseSeconds(L);
+      poseReq = autoPoseSec;
+      const c = trackCaps().exposureTime;
+      if (c && c.min !== undefined && poseReq > 0) {
+        obj.exposureTime = c.max >= 10 ? poseReq * 1000 : poseReq;
+        obj.exposureMode = 'manual';
+      }
+    } else if (obj.exposureTime !== undefined) {
+      poseReq = exposureSeconds(trackCaps(), obj.exposureTime);
+    }
     if (poseReq > 2) {
       realPose = poseReq;
       cdTimer = startShotCountdown(realPose);
       $('camStatus').textContent = `Pose ${realPose.toFixed(1)} s…`;
-      bmp = await accumulateLongExposure($('cam2'), realPose, isFrontCam(), 'none');
+      const autoExp = exposureSeconds(trackCaps(), trackSettings().exposureTime) || 1 / 30;
+      const gain = Math.max(1, Math.min(8, realPose / autoExp));
+      bmp = await accumulateLongExposure($('cam2'), realPose, isFrontCam(), 'none', 640, gain);
     } else {
       const variants = Object.keys(obj).length ? [[obj], []] : [[]];
       for (const [adv] of variants) {

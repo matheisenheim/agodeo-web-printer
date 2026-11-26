@@ -242,7 +242,21 @@ export async function waitAppliedExposure(track, target, timeoutMs = 2000) {
   return last;
 }
 
-export async function accumulateLongExposure(video, seconds, mirror = false, filter = 'none', accWidth = 640) {
+export function measureLuma(video, w = 64, h = 36) {
+  if (!video || video.readyState < 2 || !video.videoWidth) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(video, 0, 0, w, h);
+  const d = ctx.getImageData(0, 0, w, h).data;
+  let sum = 0;
+  const n = d.length / 4;
+  for (let i = 0; i < d.length; i += 4) sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+  return sum / n;
+}
+
+export async function accumulateLongExposure(video, seconds, mirror = false, filter = 'none', accWidth = 640, gain = 1) {
   const vw = video.videoWidth || 1280;
   const vh = video.videoHeight || Math.round((vw * 3) / 4);
   const aw = accWidth;
@@ -253,6 +267,8 @@ export async function accumulateLongExposure(video, seconds, mirror = false, fil
   const actx = acc.getContext('2d');
   actx.globalCompositeOperation = 'lighter';
   const dur = seconds * 1000;
+  const frames = Math.max(1, Math.round(dur / 100));
+  actx.globalAlpha = 1 / frames;
   const t0 = performance.now();
   await new Promise((resolve) => {
     const step = () => {
@@ -265,13 +281,17 @@ export async function accumulateLongExposure(video, seconds, mirror = false, fil
     };
     step();
   });
+  actx.globalAlpha = 1;
   const width = PRINT_WIDTH;
   const h = Math.max(1, Math.round((ah * width) / aw));
   const out = document.createElement('canvas');
   out.width = width;
   out.height = h;
   const octx = out.getContext('2d');
-  if (filter && filter !== 'none' && 'filter' in octx) octx.filter = filter;
+  const filters = [];
+  if (filter && filter !== 'none') filters.push(filter);
+  if (gain && gain !== 1) filters.push(`brightness(${gain})`);
+  if (filters.length && 'filter' in octx) octx.filter = filters.join(' ');
   if (mirror) {
     octx.translate(width, 0);
     octx.scale(-1, 1);
