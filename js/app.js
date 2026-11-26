@@ -57,10 +57,24 @@ function currentMode() {
   return Number(val('printMode', '1'));
 }
 
-function currentDither() {
+function previewDither() {
   if (!currentSource) return false;
   if (currentSource.kind === 'image' || currentSource.kind === 'photobooth') return isChecked('dither', true);
   return false;
+}
+
+function currentDither() {
+  if (currentMode() === 2) return false;
+  return previewDither();
+}
+
+function updateDitherUI() {
+  const hd = currentMode() === 2;
+  const d = $('dither');
+  if (!d) return;
+  d.disabled = hd;
+  if (hd) d.checked = false;
+  if (d.parentElement) d.parentElement.title = hd ? 'Inactif en mode HD : 16 niveaux de gris réels, pas de tramage' : '';
 }
 
 function notify(msg) {
@@ -356,7 +370,7 @@ function refreshPreview() {
     $('btnPrint').disabled = true;
     return;
   }
-  const lines = renderSourceToLines(currentSource, { mode: 0, dither: currentDither() });
+  const lines = renderSourceToLines(currentSource, { mode: 0, dither: previewDither() });
   drawPreview($('preview'), lines);
   $('btnPrint').disabled = !printer.connected;
 }
@@ -1420,7 +1434,11 @@ $('imageInput').addEventListener('change', async (e) => {
 });
 
 $('dither').addEventListener('change', refreshPreview);
-$('printMode').addEventListener('change', refreshPreview);
+$('printMode').addEventListener('change', () => {
+  updateDitherUI();
+  refreshPreview();
+});
+updateDitherUI();
 
 function checkEnvironment() {
   if (!window.isSecureContext) {
