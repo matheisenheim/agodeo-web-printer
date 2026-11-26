@@ -1049,7 +1049,7 @@ $('btnShot').addEventListener('click', async () => {
     }
     await new Promise((r) => setTimeout(r, 250));
     $('camStatus').textContent = pose > 2 ? `Pose ${pose.toFixed(1)} s…` : 'Capture en cours…';
-    const bmp = await captureStill($('cam2'), undefined, isFrontCam(), 'none', centerOn);
+    const bmp = await captureStill($('cam2'), undefined, isFrontCam(), 'none');
     lastShot = bmp;
     await restorePose();
     const cv = $('shotCanvas');
