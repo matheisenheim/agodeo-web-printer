@@ -688,6 +688,8 @@ const MODE_FOR_PARAM = {
   colorTemperature: { sel: 'modeWB', key: 'whiteBalanceMode' },
 };
 
+const MODE_SELECTS = [['modeFocus', 'focusMode'], ['modeExposure', 'exposureMode'], ['modeWB', 'whiteBalanceMode']];
+
 function fillModeSelect(sel, values, key) {
   sel.innerHTML = '';
   if (!values || !values.length) {
@@ -781,7 +783,7 @@ function buildManualPanel() {
   buildResFps(caps);
 }
 
-for (const [id, key] of [['modeFocus', 'focusMode'], ['modeExposure', 'exposureMode'], ['modeWB', 'whiteBalanceMode']]) {
+for (const [id, key] of MODE_SELECTS) {
   $(id).dataset.key = key;
   $(id).addEventListener('change', async (e) => {
     await applyAdvanced({ [e.target.dataset.key]: e.target.value });
@@ -956,6 +958,25 @@ $('btnGrid2').addEventListener('click', () => {
   $('gridOverlay').hidden = !camGridOn;
 });
 
+async function applyManualNow() {
+  if (!camTabRunning) return;
+  const caps = trackCaps();
+  const obj = {};
+  for (const p of MANUAL_PARAMS) {
+    const s = manualSliders[p.key];
+    const c = caps[p.key];
+    if (!s || !c || c.min === undefined) continue;
+    obj[p.key] = Number(s.inp.value);
+    const modeFor = MODE_FOR_PARAM[p.key];
+    if (modeFor) obj[modeFor.key] = 'manual';
+  }
+  for (const [id, key] of MODE_SELECTS) {
+    const sel = $(id);
+    if (sel && !sel.disabled && sel.value) obj[key] = sel.value;
+  }
+  if (Object.keys(obj).length) await applyAdvanced(obj);
+}
+
 $('btnShot').addEventListener('click', async () => {
   try {
     if (camTimerOn) {
@@ -965,6 +986,8 @@ $('btnShot').addEventListener('click', async () => {
         await new Promise((r) => setTimeout(r, 1000));
       }
     }
+    await applyManualNow();
+    await new Promise((r) => setTimeout(r, 250));
     const bmp = await captureFrame($('cam2'), undefined, isFrontCam(), 'none');
     lastShot = bmp;
     const cv = $('shotCanvas');
