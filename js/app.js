@@ -50,6 +50,7 @@ printer.onDisconnect = () => {
   $('btnConnect').disabled = false;
   $('btnDisconnect').disabled = true;
   $('btnPrint').disabled = true;
+  $('printerInfo').hidden = true;
 };
 
 function currentMode() {
@@ -70,8 +71,8 @@ function notify(msg) {
 $('btnPopupClose').addEventListener('click', () => { $('popup').hidden = true; });
 $('popup').addEventListener('click', (e) => { if (e.target === $('popup')) $('popup').hidden = true; });
 
-let currentView = 'printer';
-let prevView = 'printer';
+let currentView = 'home';
+let prevView = 'home';
 let savedMode = null;
 let selectedCamId = null;
 let cameras = [];
@@ -241,8 +242,8 @@ document.querySelectorAll('.tabbar-btn').forEach((b) => {
   b.addEventListener('click', () => showView(b.dataset.view));
 });
 
-$('btnExitBooth').addEventListener('click', () => showView(prevView || 'printer'));
-$('btnExitCam').addEventListener('click', () => showView(prevView || 'printer'));
+$('btnExitBooth').addEventListener('click', () => showView(prevView || 'home'));
+$('btnExitCam').addEventListener('click', () => showView(prevView || 'home'));
 
 function updateFullscreenBtn() {
   const on = !!document.fullscreenElement;
@@ -369,6 +370,31 @@ async function refreshState() {
   }
 }
 
+async function refreshPrinterInfo() {
+  const el = $('printerInfo');
+  if (!el) return;
+  if (!printer.connected) {
+    el.hidden = true;
+    return;
+  }
+  const name = printer.device.name || printer.device.id;
+  el.hidden = false;
+  el.textContent = `Connexion à ${name}… récupération des infos…`;
+  try {
+    const st = await printer.getState(2500);
+    let info = null;
+    try { info = await printer.getInfo(2500); } catch (e) { info = null; }
+    const parts = [`✅ Connecté : ${name}`];
+    if (st && st.text) parts.push(st.text);
+    if (info && info.version) parts.push(`firmware ${info.version}`);
+    if (info && info.type !== null && info.type !== undefined) parts.push(`type 0x${info.type.toString(16)}`);
+    if (info && info.count) parts.push(`impressions (A7) : 0x${info.count.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`);
+    el.textContent = parts.join(' — ');
+  } catch (e) {
+    el.textContent = `✅ Connecté : ${name} — infos indisponibles (${e.message})`;
+  }
+}
+
 function afterConnect() {
   $('connStatus').textContent = `Connecté : ${printer.device.name || printer.device.id}`;
   $('btnConnect').disabled = true;
@@ -379,6 +405,7 @@ function afterConnect() {
   showReconnectButton();
   refreshPreview();
   refreshState();
+  refreshPrinterInfo();
   printer.startStatusPolling(30000);
 }
 

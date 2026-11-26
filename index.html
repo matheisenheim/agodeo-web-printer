@@ -17,7 +17,7 @@
   <p class="hint">Web Bluetooth : Chrome ou Edge uniquement, en HTTPS ou sur localhost. Non disponible sur Safari / iOS / Firefox.</p>
 </header>
 <main>
-  <section id="view-printer" class="view active">
+  <section id="view-home" class="view active">
     <div class="panel">
       <h2>Connexion</h2>
       <div class="row">
@@ -27,6 +27,14 @@
         <button id="btnReconnect" hidden>Reconnecter à <span id="reconnectLabel"></span></button>
       </div>
       <div id="connStatus" class="status">Non connecté</div>
+      <div id="printerInfo" class="status info" hidden></div>
+      <p class="hint">Une fois l'imprimante connectée, ses informations (état, batterie, température, firmware, compteur) s'affichent ici. Réglages avancés, labo protocole et journal BLE : onglet 🛠️ Admin.</p>
+    </div>
+  </section>
+
+  <section id="view-admin" class="view">
+    <div class="panel">
+      <h2>Imprimante — admin</h2>
       <div class="row actions">
         <button id="btnState">État de l'imprimante</button>
         <button id="btnInfo">Infos appareil (B0/B1/A7)</button>
@@ -210,7 +218,8 @@
   </div>
 </div>
 <nav id="tabbar">
-  <button class="tabbar-btn active" data-view="printer"><span class="ico">🖨️</span><span>Imprimante</span></button>
+  <button class="tabbar-btn active" data-view="home"><span class="ico">🏠</span><span>Accueil</span></button>
+  <button class="tabbar-btn" data-view="admin"><span class="ico">🛠️</span><span>Admin</span></button>
   <button class="tabbar-btn" data-view="content"><span class="ico">✏️</span><span>Contenu</span></button>
   <button class="tabbar-btn" data-view="camera"><span class="ico">📷</span><span>Photo</span></button>
   <button class="tabbar-btn" data-view="booth"><span class="ico">🎞️</span><span>Photobooth</span></button>

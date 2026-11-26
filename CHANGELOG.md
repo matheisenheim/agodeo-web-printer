@@ -3,6 +3,10 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.20] — 2026-11-26
+- **Nouvel onglet 🏠 Accueil** (onglet par défaut) : menu de connexion BLE (préfixe, Connecter/Déconnecter/Reconnecter, statut). **Une fois l'imprimante connectée, un message d'infos s'affiche dans l'Accueil** : `✅ Connecté : MXW01 — état/batterie/tête — firmware — type — impressions (A7)` (récupéré via `getState` + `getInfo` à la connexion ; masqué à la déconnexion)
+- **Onglet 🛠️ Admin** : tout le reste de l'ancien onglet Imprimante (état détaillé, infos B0/B1/A7, annuler l'impression, avancer le papier + auto, sonde USB, labo protocole, journal BLE). Barre d'onglets passée à 5 onglets : Accueil / Admin / Contenu / Photo / Photobooth
+
 ## [3.2.19] — 2026-11-26
 - **Par défaut, la photo est une trame de l'aperçu live** : si aucun réglage manuel n'est modifié (et pose auto désactivée), 📸 capture directement une trame de la vidéo (`captureFrame`) — plus de flux dédié ni de `takePhoto()` dans ce cas. Le flux de capture dédié + `takePhoto()` n'est utilisé que quand des réglages manuels sont actifs (sliders/modes « dirty ») ou pose auto > 0
 - **« ↺ Auto » remet vraiment tout par défaut** : les flags dirty des sliders et des sélecteurs de mode sont effacés (et la pose auto est décochée) → la photo suivante redevient une trame de l'aperçu

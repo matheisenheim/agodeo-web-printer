@@ -9,13 +9,13 @@ Application web **100 % locale et statique** (aucun serveur backend, aucune donn
 
 L'application permet de se connecter depuis le navigateur, lire l'état (papier, batterie, température, surchauffe), imprimer du **texte**, une **image/photo** (bitmap 384 px, dithering Floyd-Steinberg optionnel) ou un **QR code généré localement**, régler la densité et le mode (mono / 16 gris), et avancer le papier. Elle est **installable comme une appli (PWA)** et se **reconnecte en un clic** au dernier appareil.
 
-L'interface est organisée en **4 onglets** (barre du bas) : **🖨️ Imprimante** (connexion, état, labo protocole, journal BLE), **✏️ Contenu** (texte / image / QR / modèles + aperçu + impression), **📷 Photo** (appareil photo : zoom, flash, switch caméra, minuteur, grille 3×3, télécharger/imprimer) et **🎞️ Photobooth** (plein écran, impression directe de la photo).
+L'interface est organisée en **5 onglets** (barre du bas) : **🏠 Accueil** (connexion BLE + message d'infos de l'imprimante une fois connectée : état, batterie, température, firmware, compteur A7), **🛠️ Admin** (état / infos B0-B1-A7, annuler l'impression, avancer le papier, sonde USB, labo protocole, journal BLE), **✏️ Contenu** (texte / image / QR / modèles + aperçu + impression), **📷 Photo** (appareil photo : zoom, flash, switch caméra, minuteur, grille 3×3, réglages manuels, télécharger/imprimer) et **🎞️ Photobooth** (plein écran, impression directe de la photo).
 
 📜 **[CHANGELOG.md](CHANGELOG.md)** — historique de toutes les versions (le numéro en haut de l'app = dernière entrée du changelog).
 
 🎨 **Thème visuel** : palette chaude (crème / terracotta / chocolat) définie en variables CSS dans `style.css` — facile à personnaliser.
 
-⛶ **Plein écran** : bouton ⛶ dans l'en-tête (onglets Imprimante et Contenu) via l'API Fullscreen — masque toute l'interface Chrome dans la session. Alternative permanente : installer la PWA (⋮ → « Installer l'application »), elle s'ouvre en `standalone` (vrai plein écran, même hors ligne).
+⛶ **Plein écran** : bouton ⛶ dans l'en-tête (onglets Accueil, Admin et Contenu) via l'API Fullscreen — masque toute l'interface Chrome dans la session. Alternative permanente : installer la PWA (⋮ → « Installer l'application »), elle s'ouvre en `standalone` (vrai plein écran, même hors ligne).
 
 ---
 
@@ -90,8 +90,8 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 ## 3. Guide d'utilisation
 
 1. Allumer l'imprimante, charger un rouleau 57 mm, fermer FunPrint sur le téléphone.
-2. Cliquer **« Connecter l'imprimante »** (laisser le préfixe vide pour tout lister, ou taper `MXW01`), choisir l'imprimante dans le sélecteur du navigateur.
-3. **« État de l'imprimante »** : pour un MXW01 affiche état + batterie % + température de la tête + erreur éventuelle (pas de papier, surchauffe…).
+2. Onglet **🏠 Accueil** → cliquer **« Connecter l'imprimante »** (laisser le préfixe vide pour tout lister, ou taper `MXW01`), choisir l'imprimante dans le sélecteur du navigateur.
+3. Une fois connectée, l'onglet **🏠 Accueil** affiche un message avec les infos de l'imprimante : pour un MXW01, état + batterie % + température de la tête + firmware + compteur A7 (+ erreur éventuelle : pas de papier, surchauffe…). Les outils avancés (état détaillé, infos B0/B1, annuler, avancer le papier, sonde USB, labo, journal BLE) sont dans l'onglet **🛠️ Admin**.
 4. Onglet **Contenu** : sous-onglets **Texte**, **Image**, **QR code** ou **Modèles**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large). Le sous-onglet **Image** et le sélecteur de fichier sont **désactivés pendant qu'une image est en cours** (décodage d'un import ou impression d'une image en cours) pour éviter double import / double impression.
 
 ### Labo protocole (reverse engineering)
@@ -175,7 +175,7 @@ agodeo-web-printer/
 │   ├── qr.js             source QR (matrice via vendor/qrcode)
 │   ├── templates.js      modèles d'étiquettes vectoriels thème thé (cadre bas-relief, médaillon, branche)
 │   ├── photobooth.js     caméra (getUserMedia), capture 384 px, arrêt propre du flux
-│   └── app.js            câblage de l'interface (barre d'onglets 3 vues, sous-onglets contenu, photobooth plein écran + switch caméra, reconnexion auto, SW, polling batterie, journal)
+│   └── app.js            câblage de l'interface (5 onglets : Accueil/Admin/Contenu/Photo/Photobooth, sous-onglets contenu, photobooth plein écran + switch caméra, reconnexion auto, SW, polling batterie, journal)
 └── README.md
 ```
 
