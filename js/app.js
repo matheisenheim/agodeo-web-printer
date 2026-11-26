@@ -2,7 +2,7 @@ import { CatPrinter } from './printer.js';
 import { textSource, imageSource, renderSourceToLines, drawPreview } from './image.js';
 import { qrSource } from './qr.js';
 import { TEMPLATES, templateSource, testCardSource } from './templates.js';
-import { startCamera, stopCamera, cameraRunning, captureFrame } from './photobooth.js';
+import { startCamera, stopCamera, cameraRunning, captureFrame, listCameras } from './photobooth.js';
 import { APP_VERSION } from './protocol.js';
 
 const $ = (id) => document.getElementById(id);
@@ -53,13 +53,66 @@ function currentDither() {
   return false;
 }
 
+function setPrintStatus(msg) {
+  const ps = $('printStatus');
+  const bs = $('boothStatus');
+  if (ps) ps.textContent = msg;
+  if (bs) bs.textContent = msg;
+}
+
+let currentView = 'printer';
+let savedMode = null;
+let selectedCamId = null;
+
+function showView(name) {
+  currentView = name;
+  document.querySelectorAll('.view').forEach((v) => {
+    v.classList.toggle('active', v.id === `view-${name}`);
+  });
+  document.querySelectorAll('.tabbar-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.view === name);
+  });
+  const booth = name === 'booth';
+  document.body.classList.toggle('booth', booth);
+  if (booth) {
+    if (savedMode === null) savedMode = val('printMode', '1');
+    $('printMode').value = '1';
+    populateCameras().catch(() => {});
+  } else {
+    if (savedMode !== null) {
+      $('printMode').value = savedMode;
+      savedMode = null;
+    }
+    if (cameraRunning()) stopBoothCamera();
+    if (name === 'content') refreshPreview();
+  }
+}
+
+document.querySelectorAll('.tabbar-btn').forEach((b) => {
+  b.addEventListener('click', () => showView(b.dataset.view));
+});
+
+const SUBTABS = { Text: 'paneText', Image: 'paneImage', Qr: 'paneQr', Template: 'paneTemplate' };
+
 function activeTab() {
   if ($('tabQr').classList.contains('active')) return 'qr';
   if ($('tabImage').classList.contains('active')) return 'image';
   if ($('tabTemplate').classList.contains('active')) return 'template';
-  if ($('tabPhotobooth').classList.contains('active')) return 'photobooth';
   return 'text';
 }
+
+function switchSubTab(tab) {
+  for (const [name, pane] of Object.entries(SUBTABS)) {
+    $(`tab${name}`).classList.toggle('active', name === tab);
+    $(pane).hidden = name !== tab;
+  }
+  refreshPreview();
+}
+
+$('tabText').addEventListener('click', () => switchSubTab('Text'));
+$('tabImage').addEventListener('click', () => switchSubTab('Image'));
+$('tabQr').addEventListener('click', () => switchSubTab('Qr'));
+$('tabTemplate').addEventListener('click', () => switchSubTab('Template'));
 
 function currentTemplate() {
   return TEMPLATES.find((t) => t.id === $('templateSelect').value) || TEMPLATES[0];
@@ -112,6 +165,7 @@ function buildTemplateUI() {
 }
 
 function refreshPreview() {
+  if (currentView === 'booth') return;
   const tab = activeTab();
   if (tab === 'text') {
     currentSource = textSource(val('textInput'), Number(val('fontSize', '24')), val('fontFamily', 'sans-serif'));
@@ -210,9 +264,9 @@ $('btnInfo').addEventListener('click', async () => {
 $('btnCancel').addEventListener('click', async () => {
   try {
     await printer.cancel();
-    $('printStatus').textContent = 'Annulation envoyée (AC).';
+    setPrintStatus('Annulation envoyée (AC).');
   } catch (e) {
-    $('printStatus').textContent = `Erreur : ${e.message}`;
+    setPrintStatus(`Erreur : ${e.message}`);
   }
 });
 
@@ -248,41 +302,40 @@ $('btnUsbPick').addEventListener('click', async () => {
 $('btnFeed').addEventListener('click', async () => {
   try {
     await printer.feed(Number(val('feedSteps', '50')) || 50);
-    $('printStatus').textContent = 'Papier avancé.';
+    setPrintStatus('Papier avancé.');
   } catch (e) {
-    $('printStatus').textContent = `Erreur : ${e.message}`;
+    setPrintStatus(`Erreur : ${e.message}`);
   }
 });
 
-const TABS = { Text: 'paneText', Image: 'paneImage', Qr: 'paneQr', Template: 'paneTemplate', Photobooth: 'panePhotobooth' };
-
-let savedMode = null;
-
-function switchTab(tab) {
-  for (const [name, pane] of Object.entries(TABS)) {
-    $(`tab${name}`).classList.toggle('active', name === tab);
-    $(pane).hidden = name !== tab;
+async function printCurrent() {
+  if (!currentSource) {
+    setPrintStatus('Rien à imprimer.');
+    return;
   }
-  if (tab === 'Photobooth') {
-    if (savedMode === null) savedMode = $('printMode').value;
-    $('printMode').value = '2';
-  } else if (savedMode !== null) {
-    $('printMode').value = savedMode;
-    savedMode = null;
+  if (!printer.connected) {
+    setPrintStatus('Imprimante non connectée — onglet « Imprimante » d\'abord.');
+    return;
   }
-  if (tab !== 'Photobooth' && cameraRunning()) {
-    stopCamera($('cam'));
-    $('btnCam').textContent = 'Démarrer la caméra';
-    $('btnCapture').disabled = true;
+  try {
+    $('btnPrint').disabled = true;
+    const mode = currentMode();
+    const lines = renderSourceToLines(currentSource, { mode, dither: currentDither() });
+    setPrintStatus(`Impression de ${lines.length} lignes (mode ${mode === 2 ? '4 bits / 16 gris — HD' : '1 bit mono'})…`);
+    const n = await printer.printLines(lines, {
+      energy: Number(val('energy', '49152')),
+      feed: isChecked('autoFeed', false) ? Number(val('feedSteps', '50')) || 50 : 0,
+      mode,
+    });
+    setPrintStatus(`Terminé : ${n} lignes envoyées.`);
+  } catch (e) {
+    setPrintStatus(`Erreur : ${e.message}`);
+  } finally {
+    refreshPreview();
   }
-  refreshPreview();
 }
 
-$('tabText').addEventListener('click', () => switchTab('Text'));
-$('tabImage').addEventListener('click', () => switchTab('Image'));
-$('tabQr').addEventListener('click', () => switchTab('Qr'));
-$('tabTemplate').addEventListener('click', () => switchTab('Template'));
-$('tabPhotobooth').addEventListener('click', () => switchTab('Photobooth'));
+$('btnPrint').addEventListener('click', printCurrent);
 
 function applyMirror() {
   $('cam').classList.toggle('mirrored', isChecked('pbMirror', true));
@@ -311,22 +364,64 @@ function countdown(n) {
   });
 }
 
+async function populateCameras() {
+  const sel = $('camSelect');
+  if (!sel) return;
+  const cams = await listCameras();
+  const prev = selectedCamId || sel.value;
+  sel.innerHTML = '';
+  cams.forEach((c, i) => {
+    const o = document.createElement('option');
+    o.value = c.deviceId;
+    o.textContent = c.label || `Caméra ${i + 1}`;
+    sel.appendChild(o);
+  });
+  if (prev && cams.some((c) => c.deviceId === prev)) sel.value = prev;
+  sel.parentElement.parentElement.style.display = cams.length > 1 ? '' : 'none';
+}
+
+$('camSelect').addEventListener('change', async () => {
+  selectedCamId = val('camSelect') || null;
+  if (!cameraRunning()) return;
+  stopCamera($('cam'));
+  try {
+    await startCamera($('cam'), selectedCamId || undefined);
+    applyMirror();
+    $('boothStatus').textContent = 'Caméra changée.';
+  } catch (e) {
+    $('btnCapture').disabled = true;
+    $('boothStatus').textContent = `Caméra : ${e.message}`;
+  }
+});
+
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+  navigator.mediaDevices.addEventListener('devicechange', () => {
+    populateCameras().catch(() => {});
+  });
+}
+
+function stopBoothCamera() {
+  stopCamera($('cam'));
+  $('btnCam').textContent = 'Démarrer la caméra';
+  $('btnCapture').disabled = true;
+}
+
 $('btnCam').addEventListener('click', async () => {
   try {
     if (cameraRunning()) {
-      stopCamera($('cam'));
-      $('btnCam').textContent = 'Démarrer la caméra';
-      $('btnCapture').disabled = true;
+      stopBoothCamera();
+      $('boothStatus').textContent = 'Caméra arrêtée.';
       return;
     }
-    $('connStatus').textContent = 'Demande d\'accès à la caméra… (autorise-la dans le navigateur)';
-    await startCamera($('cam'));
+    $('boothStatus').textContent = 'Demande d\'accès à la caméra… (autorise-la dans le navigateur)';
+    await startCamera($('cam'), selectedCamId || undefined);
+    await populateCameras();
     applyMirror();
     $('btnCam').textContent = 'Arrêter la caméra';
     $('btnCapture').disabled = false;
-    $('connStatus').textContent = 'Caméra active.';
+    $('boothStatus').textContent = 'Caméra active — choisis recto/verso dans la liste si plusieurs caméras.';
   } catch (e) {
-    $('connStatus').textContent = `Caméra : ${e.message}`;
+    $('boothStatus').textContent = `Caméra : ${e.message}`;
   }
 });
 
@@ -337,10 +432,14 @@ $('btnCapture').addEventListener('click', async () => {
     currentSource = isChecked('pbFrame', true)
       ? { kind: 'photobooth', bmp, label: val('pbLabel', 'Souriez !') }
       : { kind: 'image', bmp };
-    refreshPreview();
-    $('printStatus').textContent = 'Photo capturée — « Imprimer » pour la sortir.';
+    if (printer.connected) {
+      await printCurrent();
+    } else {
+      showView('content');
+      setPrintStatus('Photo capturée — connecte l\'imprimante (onglet « Imprimante ») puis « Imprimer » pour la sortir.');
+    }
   } catch (e) {
-    $('printStatus').textContent = `Erreur capture : ${e.message}`;
+    $('boothStatus').textContent = `Erreur capture : ${e.message}`;
   }
 });
 
@@ -348,10 +447,10 @@ $('btnTestCard').addEventListener('click', async () => {
   currentSource = testCardSource();
   refreshPreview();
   if (printer.connected) {
-    $('printStatus').textContent = 'Impression de la page de test…';
-    $('btnPrint').click();
+    setPrintStatus('Impression de la page de test…');
+    await printCurrent();
   } else {
-    $('printStatus').textContent = 'Page de test prête dans l\'aperçu — connecte l\'imprimante puis « Imprimer ».';
+    setPrintStatus('Page de test prête dans l\'aperçu — connecte l\'imprimante puis « Imprimer ».');
   }
 });
 
@@ -371,9 +470,9 @@ async function labSend(cmdHex, payloadHex) {
     const payload = parseHex(payloadHex);
     if (cmd === undefined || Number.isNaN(cmd)) throw new Error('commande hex invalide');
     await printer.send(cmd, payload);
-    $('printStatus').textContent = `envoyé : cmd=0x${cmd.toString(16)} payload=${payloadHex || '(vide)'}`;
+    setPrintStatus(`envoyé : cmd=0x${cmd.toString(16)} payload=${payloadHex || '(vide)'}`);
   } catch (e) {
-    $('printStatus').textContent = `Labo : ${e.message}`;
+    setPrintStatus(`Labo : ${e.message}`);
   }
 }
 
@@ -396,25 +495,6 @@ $('imageInput').addEventListener('change', async (e) => {
 
 $('dither').addEventListener('change', refreshPreview);
 $('printMode').addEventListener('change', refreshPreview);
-
-$('btnPrint').addEventListener('click', async () => {
-  try {
-    $('btnPrint').disabled = true;
-    const mode = currentMode();
-    const lines = renderSourceToLines(currentSource, { mode, dither: currentDither() });
-    $('printStatus').textContent = `Impression de ${lines.length} lignes (mode ${mode === 2 ? '4 bits / 16 gris — HD' : '1 bit mono'})…`;
-    const n = await printer.printLines(lines, {
-      energy: Number(val('energy', '49152')),
-      feed: isChecked('autoFeed', true) ? Number(val('feedSteps', '50')) || 50 : 0,
-      mode,
-    });
-    $('printStatus').textContent = `Terminé : ${n} lignes envoyées.`;
-  } catch (e) {
-    $('printStatus').textContent = `Erreur : ${e.message}`;
-  } finally {
-    refreshPreview();
-  }
-});
 
 function checkEnvironment() {
   if (!window.isSecureContext) {

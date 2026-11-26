@@ -9,6 +9,8 @@ Application web **100 % locale et statique** (aucun serveur backend, aucune donn
 
 L'application permet de se connecter depuis le navigateur, lire l'état (papier, batterie, température, surchauffe), imprimer du **texte**, une **image/photo** (bitmap 384 px, dithering Floyd-Steinberg optionnel) ou un **QR code généré localement**, régler la densité et le mode (mono / 16 gris), et avancer le papier. Elle est **installable comme une appli (PWA)** et se **reconnecte en un clic** au dernier appareil.
 
+L'interface est organisée en **3 onglets** (barre du bas) : **🖨️ Imprimante** (connexion, état, labo protocole, journal BLE), **✏️ Contenu** (texte / image / QR / modèles + aperçu + impression) et **📸 Photobooth** (plein écran, impression directe de la photo).
+
 ---
 
 ## 1. Compatibilité
@@ -84,7 +86,7 @@ Puis recharge la page avec **Ctrl+F5** (sinon le cache garde l'ancien JS) et vé
 1. Allumer l'imprimante, charger un rouleau 57 mm, fermer FunPrint sur le téléphone.
 2. Cliquer **« Connecter l'imprimante »** (laisser le préfixe vide pour tout lister, ou taper `MXW01`), choisir l'imprimante dans le sélecteur du navigateur.
 3. **« État de l'imprimante »** : pour un MXW01 affiche état + batterie % + température de la tête + erreur éventuelle (pas de papier, surchauffe…).
-4. Onglet **Texte**, **Image**, **QR code** ou **Modèles**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large).
+4. Onglet **Contenu** : sous-onglets **Texte**, **Image**, **QR code** ou **Modèles**, régler la **densité** (curseur énergie) et le **mode** : mono 1 bit (rapide) ou 16 niveaux de gris 4 bits « HD » (photos). L'aperçu montre le rendu (384 px de large).
 
 ### Labo protocole (reverse engineering)
 
@@ -98,7 +100,7 @@ Pour découvrir `AE`, `B2`, `B3` (inconnues), 3 pistes :
 
 ### Photobooth
 
-Onglet **Photobooth** : aperçu webcam en direct (`getUserMedia`, exige HTTPS/localhost + autorisation caméra), bouton **Capturer** qui fige la photo dans l'aperçu (384 px de large), puis **Imprimer**. Options : « cadre photobooth + date » (double filet + texte + date au-dessus de la photo), **miroir selfie** (aperçu ET photo retournées), **minuteur 3-2-1** avant la capture. Le mode **16 niveaux de gris HD** est sélectionné automatiquement dans cet onglet. Un seul appareil BLE connecté à la fois (fermer FunPrint ailleurs).
+Onglet **Photobooth** (s'ouvre **en plein écran**, sans header ni barre d'onglets) : aperçu webcam en direct (`getUserMedia`, exige HTTPS/localhost + autorisation caméra). Bouton **📸 Prendre la photo** : fige la photo (384 px de large) et **l'imprime directement** si l'imprimante est connectée (sinon la photo part dans l'aperçu de l'onglet Contenu). Sur téléphone, la liste **Caméra** permet de **changer de caméra (recto/verso)** dès que le navigateur en voit au moins deux. Options : « cadre photobooth + date » (double filet + texte + date au-dessus de la photo), **miroir selfie** (aperçu ET photo retournées), **minuteur 3-2-1** avant la capture. Le mode **1 (mono 1 bit, éjection réduite du papier après l'impression)** est forcé automatiquement dans cet onglet et restauré en en sortant. Quitter l'onglet arrête la caméra. Un seul appareil BLE connecté à la fois (fermer FunPrint ailleurs).
 
 **Page de test** : bouton « Page de test » (panneau Impression) → génère une mire (titre + date + version, damier d'alignement, barre des 16 niveaux de gris, 8 lignes de texte, QR du projet) et l'imprime directement si l'imprimante est connectée, sinon la met dans l'aperçu.
 
@@ -154,7 +156,7 @@ agodeo-web-printer/
 │   ├── qr.js             source QR (matrice via vendor/qrcode)
 │   ├── templates.js      modèles d'étiquettes vectoriels thème thé (cadre bas-relief, médaillon, branche)
 │   ├── photobooth.js     caméra (getUserMedia), capture 384 px, arrêt propre du flux
-│   └── app.js            câblage de l'interface (onglets, reconnexion auto, SW, polling batterie, journal)
+│   └── app.js            câblage de l'interface (barre d'onglets 3 vues, sous-onglets contenu, photobooth plein écran + switch caméra, reconnexion auto, SW, polling batterie, journal)
 └── README.md
 ```
 

@@ -2,17 +2,23 @@ import { PRINT_WIDTH } from './protocol.js';
 
 let stream = null;
 
-export async function startCamera(video) {
+export async function startCamera(video, deviceId) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     throw new Error('caméra indisponible : getUserMedia exige HTTPS ou localhost');
   }
-  stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-    audio: false,
-  });
+  const videoConstraints = deviceId
+    ? { deviceId: { exact: deviceId } }
+    : { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } };
+  stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
   video.srcObject = stream;
   await video.play();
   return stream;
+}
+
+export async function listCameras() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return [];
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  return devices.filter((d) => d.kind === 'videoinput');
 }
 
 export function stopCamera(video) {
