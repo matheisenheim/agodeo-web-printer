@@ -61,10 +61,13 @@ function setPrintStatus(msg) {
 }
 
 let currentView = 'printer';
+let prevView = 'printer';
 let savedMode = null;
 let selectedCamId = null;
+let cameras = [];
 
 function showView(name) {
+  if (name === 'booth' && currentView !== 'booth') prevView = currentView;
   currentView = name;
   document.querySelectorAll('.view').forEach((v) => {
     v.classList.toggle('active', v.id === `view-${name}`);
@@ -77,7 +80,7 @@ function showView(name) {
   if (booth) {
     if (savedMode === null) savedMode = val('printMode', '1');
     $('printMode').value = '1';
-    populateCameras().catch(() => {});
+    refreshCameras().catch(() => {});
   } else {
     if (savedMode !== null) {
       $('printMode').value = savedMode;
@@ -91,6 +94,8 @@ function showView(name) {
 document.querySelectorAll('.tabbar-btn').forEach((b) => {
   b.addEventListener('click', () => showView(b.dataset.view));
 });
+
+$('btnExitBooth').addEventListener('click', () => showView(prevView || 'printer'));
 
 const SUBTABS = { Text: 'paneText', Image: 'paneImage', Qr: 'paneQr', Template: 'paneTemplate' };
 
@@ -364,30 +369,29 @@ function countdown(n) {
   });
 }
 
-async function populateCameras() {
-  const sel = $('camSelect');
-  if (!sel) return;
-  const cams = await listCameras();
-  const prev = selectedCamId || sel.value;
-  sel.innerHTML = '';
-  cams.forEach((c, i) => {
-    const o = document.createElement('option');
-    o.value = c.deviceId;
-    o.textContent = c.label || `Caméra ${i + 1}`;
-    sel.appendChild(o);
-  });
-  if (prev && cams.some((c) => c.deviceId === prev)) sel.value = prev;
-  sel.parentElement.parentElement.style.display = cams.length > 1 ? '' : 'none';
+async function refreshCameras() {
+  cameras = await listCameras();
+  const btn = $('btnCamSwitch');
+  if (btn) btn.disabled = cameras.length < 2;
+  if (selectedCamId && !cameras.some((c) => c.deviceId === selectedCamId)) selectedCamId = null;
 }
 
-$('camSelect').addEventListener('change', async () => {
-  selectedCamId = val('camSelect') || null;
-  if (!cameraRunning()) return;
+$('btnCamSwitch').addEventListener('click', async () => {
+  if (cameras.length === 0) await refreshCameras();
+  if (cameras.length < 2) return;
+  const idx = cameras.findIndex((c) => c.deviceId === selectedCamId);
+  const next = cameras[(idx + 1) % cameras.length];
+  selectedCamId = next.deviceId;
+  const label = next.label || `caméra ${idx + 2}`;
+  if (!cameraRunning()) {
+    $('boothStatus').textContent = `Caméra sélectionnée : ${label} (elle démarrera avec « Démarrer la caméra »).`;
+    return;
+  }
   stopCamera($('cam'));
   try {
-    await startCamera($('cam'), selectedCamId || undefined);
+    await startCamera($('cam'), selectedCamId);
     applyMirror();
-    $('boothStatus').textContent = 'Caméra changée.';
+    $('boothStatus').textContent = `Caméra : ${label}`;
   } catch (e) {
     $('btnCapture').disabled = true;
     $('boothStatus').textContent = `Caméra : ${e.message}`;
@@ -396,7 +400,7 @@ $('camSelect').addEventListener('change', async () => {
 
 if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
   navigator.mediaDevices.addEventListener('devicechange', () => {
-    populateCameras().catch(() => {});
+    refreshCameras().catch(() => {});
   });
 }
 
@@ -415,7 +419,7 @@ $('btnCam').addEventListener('click', async () => {
     }
     $('boothStatus').textContent = 'Demande d\'accès à la caméra… (autorise-la dans le navigateur)';
     await startCamera($('cam'), selectedCamId || undefined);
-    await populateCameras();
+    await refreshCameras();
     applyMirror();
     $('btnCam').textContent = 'Arrêter la caméra';
     $('btnCapture').disabled = false;
