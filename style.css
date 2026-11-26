@@ -121,6 +121,22 @@ input[type="number"] { width: 70px; border: 1px solid #ccc; border-radius: 6px; 
   border: 1px solid #ccc;
   border-radius: 8px;
   overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+}
+#filterLabel {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
 }
 #cam { width: 100%; display: block; background: #000; }
 #cam.mirrored { transform: scaleX(-1); }

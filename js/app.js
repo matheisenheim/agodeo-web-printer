@@ -69,6 +69,45 @@ let cameras = [];
 let screenFlash = false;
 let wakeLock = null;
 
+const FILTERS = [
+  { name: 'Aucun', css: 'none' },
+  { name: 'N&B', css: 'grayscale(1)' },
+  { name: 'Sépia', css: 'sepia(0.85)' },
+  { name: 'Chaud', css: 'sepia(0.35) saturate(1.5) contrast(1.05)' },
+  { name: 'Froid', css: 'saturate(0.55) brightness(1.08) hue-rotate(160deg)' },
+  { name: 'Contraste', css: 'contrast(1.7) saturate(1.3)' },
+  { name: 'Inversé', css: 'invert(1) hue-rotate(180deg)' },
+];
+let filterIdx = 0;
+
+function applyFilter() {
+  const f = FILTERS[filterIdx];
+  const cam = $('cam');
+  if (cam) cam.style.filter = f.css;
+  const lab = $('filterLabel');
+  if (lab) lab.textContent = f.name;
+}
+
+function cycleFilter(dir) {
+  filterIdx = (filterIdx + dir + FILTERS.length) % FILTERS.length;
+  applyFilter();
+}
+
+let swipeX = null;
+let swipeY = null;
+$('camWrap').addEventListener('pointerdown', (e) => {
+  swipeX = e.clientX;
+  swipeY = e.clientY;
+});
+$('camWrap').addEventListener('pointerup', (e) => {
+  if (swipeX === null) return;
+  const dx = e.clientX - swipeX;
+  const dy = e.clientY - swipeY;
+  swipeX = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) cycleFilter(dx < 0 ? 1 : -1);
+});
+$('filterLabel').addEventListener('click', () => cycleFilter(1));
+
 async function acquireWakeLock() {
   try {
     if (navigator.wakeLock && !wakeLock) {
@@ -516,7 +555,7 @@ $('btnCapture').addEventListener('click', async () => {
     await countdown(3);
     let bmp;
     try {
-      bmp = await captureFrame($('cam'), undefined, true);
+      bmp = await captureFrame($('cam'), undefined, true, FILTERS[filterIdx].css);
     } finally {
       setScreenFlash(false);
     }
@@ -606,6 +645,7 @@ window.addEventListener('error', (e) => {
 });
 
 checkEnvironment();
+applyFilter();
 printer.onLog('app prête — si ce message manque, le JS n\'a pas charge correctement (vide le cache / Ctrl+F5)');
 
 if ('serviceWorker' in navigator) {

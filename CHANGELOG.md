@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.0.16] — 2026-11-26
+- **Carousel de filtres** dans le photobooth : **balayer l'écran horizontalement** (tactile ou souris) sur la vidéo pour cycler entre Aucun / N&B / Sépia / Chaud / Froid / Contraste / Inversé (retour en boucle) ; un appui sur le libellé du filtre en haut au centre avance aussi d'un cran. Le filtre s'applique à l'aperçu (CSS) **et** à la photo imprimée (`ctx.filter` à la capture)
+
 ## [3.0.15] — 2026-11-26
 - **Fix visibilité du compte à rebours pendant le flash écran** : l'overlay blanc était au niveau `body` (z-40) donc au-dessus de tout l'onglet photobooth (z-10) — les chiffres restaient cachés. L'overlay est déplacé dans `#camWrap` (même contexte d'empilement, z-40) : le compte à rebours (z-45, noir sur blanc via `body.flashing`) est maintenant bien visible par-dessus le blanc
 

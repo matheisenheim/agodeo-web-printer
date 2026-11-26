@@ -73,7 +73,7 @@ export async function setTorch(on) {
   }
 }
 
-export async function captureFrame(video, width = PRINT_WIDTH, mirror = false) {
+export async function captureFrame(video, width = PRINT_WIDTH, mirror = false, filter = 'none') {
   const vw = video.videoWidth || width;
   const vh = video.videoHeight || Math.round((width * 3) / 4);
   const h = Math.max(1, Math.round((vh * width) / vw));
@@ -81,6 +81,7 @@ export async function captureFrame(video, width = PRINT_WIDTH, mirror = false) {
   canvas.width = width;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
+  if (filter && filter !== 'none' && 'filter' in ctx) ctx.filter = filter;
   if (mirror) {
     ctx.translate(width, 0);
     ctx.scale(-1, 1);
