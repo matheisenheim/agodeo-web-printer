@@ -965,15 +965,19 @@ let camGridOn = false;
 let centerOn = false;
 
 let orientRAF = null;
+let capturing = false;
 
 window.addEventListener('deviceorientation', (e) => {
   if (e.gamma === null && e.beta === null) return;
   if (orientRAF !== null || typeof requestAnimationFrame !== 'function') return;
   orientRAF = requestAnimationFrame(() => {
     orientRAF = null;
-    if (!centerOn) return;
     const dot = $('centerDot');
     if (!dot) return;
+    if (!centerOn || !capturing) {
+      dot.style.transform = '';
+      return;
+    }
     const max = 26;
     const x = Math.max(-max, Math.min(max, (e.gamma || 0) * 0.9));
     const y = Math.max(-max, Math.min(max, ((e.beta || 0) - 45) * 0.9));
@@ -1036,7 +1040,8 @@ function poseSeconds() {
   if (!s || !s.dirty) return 0;
   const c = trackCaps().exposureTime;
   if (!c || c.min === undefined) return 0;
-  const v = Number(s.inp.value);
+  const applied = trackSettings().exposureTime;
+  const v = applied !== undefined ? applied : Number(s.inp.value);
   return c.max < 10 ? v : v / 1000;
 }
 
@@ -1044,6 +1049,7 @@ $('btnShot').addEventListener('click', async () => {
   $('manualPanel').hidden = true;
   $('btnManual').classList.remove('on');
   let cdTimer = null;
+  capturing = true;
   try {
     if (camTimerOn) {
       const cs = $('camStatus');
@@ -1084,6 +1090,9 @@ $('btnShot').addEventListener('click', async () => {
   } catch (e) {
     notify(`❌ Photo : ${e.message}`);
   } finally {
+    capturing = false;
+    const dot = $('centerDot');
+    if (dot) dot.style.transform = '';
     if (cdTimer) clearInterval(cdTimer);
     $('shotCountdown').hidden = true;
   }

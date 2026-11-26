@@ -3,6 +3,15 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.11] — 2026-11-26
+- **Point ◎ au centre tant qu'on n'a pas appuyé sur 📸** : le gyroscope ne déplace le point que **pendant la capture** (`capturing`) — à la visée le point est parfaitement centré ; pendant une pose longue il montre en direct si le téléphone bouge
+- **Aperçu toujours live** : la pose n'est jamais appliquée au flux de visée ; au 📸 elle est appliquée, `takePhoto()` tourne, puis le track est restauré **immédiatement** après (moins de latence de retour au live)
+- **Compte à rebours = pose réellement appliquée** : lu dans `getSettings().exposureTime` après `applyConstraints` (et converti s/mm) — si le driver cape (ex. 14 s demandées → 4 s réelles), le compteur affiche la vraie durée
+
+## [3.2.10] — 2026-11-26
+- **Repère ◎ = niveau live (stabilisation)** : le cercle reste fixe au centre de l'aperçu, mais le **point se déplace en direct** selon le gyroscope (`deviceorientation`, gamma/beta, via rAF) — il suffit de ramener le point au centre du cercle pour stabiliser le téléphone. Demande de permission capteur gérée (iOS). Toujours guide-only : rien sur la photo
+- **Anti-superposition** : le compte à rebours de pose (`#shotCountdown`) passe **plus haut (12vh) et plus petit (44 px)** pour ne plus recouvrir le guide ◎
+
 ## [3.2.9] — 2026-11-26
 - **Repère centre ◎ = guide de visée uniquement** : le cercle+point ne sont plus dessinés dans la photo capturée (paramètre `markCenter`/`drawCenterMark` retirés de `captureStill`/`captureFrame`) — il reste uniquement l'overlay fixe au centre de l'aperçu live
 
