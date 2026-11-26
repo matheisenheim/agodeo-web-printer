@@ -319,7 +319,7 @@ async function printCurrent() {
     return;
   }
   if (!printer.connected) {
-    setPrintStatus('Imprimante non connectée — onglet « Imprimante » d\'abord.');
+    setPrintStatus('❌ Imprimante non connectée — connecte-la dans l\'onglet 🖨️ Imprimante, puis re-prends la photo.');
     return;
   }
   try {
@@ -332,9 +332,9 @@ async function printCurrent() {
       feed: isChecked('autoFeed', false) ? Number(val('feedSteps', '50')) || 50 : 0,
       mode,
     });
-    setPrintStatus(`Terminé : ${n} lignes envoyées.`);
+    setPrintStatus(`✅ Terminé : ${n} lignes envoyées.`);
   } catch (e) {
-    setPrintStatus(`Erreur : ${e.message}`);
+    setPrintStatus(`❌ L'imprimante ne répond pas / erreur : ${e.message}`);
   } finally {
     refreshPreview();
   }
@@ -450,14 +450,9 @@ $('btnCapture').addEventListener('click', async () => {
     currentSource = isChecked('pbFrame', true)
       ? { kind: 'photobooth', bmp, label: val('pbLabel', 'Souriez !') }
       : { kind: 'image', bmp };
-    if (printer.connected) {
-      await printCurrent();
-    } else {
-      showView('content');
-      setPrintStatus('Photo capturée — connecte l\'imprimante (onglet « Imprimante ») puis « Imprimer » pour la sortir.');
-    }
+    await printCurrent();
   } catch (e) {
-    $('boothStatus').textContent = `Erreur capture : ${e.message}`;
+    $('boothStatus').textContent = `❌ Erreur capture : ${e.message}`;
   }
 });
 
