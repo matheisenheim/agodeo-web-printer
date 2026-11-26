@@ -214,6 +214,7 @@ function showView(name) {
     $('printMode').value = '1';
     refreshCameras().catch(() => {});
     acquireWakeLock();
+    if (!cameraRunning()) startBoothCamera();
   } else {
     if (savedMode !== null) {
       $('printMode').value = savedMode;
@@ -226,6 +227,7 @@ function showView(name) {
     releaseWakeLock();
     if (name === 'content') refreshPreview();
   }
+  if (name === 'camera' && !camTabRunning && !cameraRunning()) startCamTab();
 }
 
 document.querySelectorAll('.tabbar-btn').forEach((b) => {
@@ -609,12 +611,8 @@ function applyMirror() {
   if (c2) c2.classList.toggle('mirrored', m);
 }
 
-$('btnCam').addEventListener('click', async () => {
+async function startBoothCamera() {
   try {
-    if (cameraRunning()) {
-      stopBoothCamera();
-      return;
-    }
     await startCamera($('cam'), selectedCamId || undefined);
     await setFocusMode('continuous');
     await refreshCameras();
@@ -623,8 +621,16 @@ $('btnCam').addEventListener('click', async () => {
     $('btnCam').textContent = 'Arrêter la caméra';
     $('btnCapture').disabled = false;
   } catch (e) {
-    notify(`❌ Caméra : ${e.message}`);
+    notify(`❌ Caméra : ${e.message} — appuie sur « Démarrer la caméra ».`);
   }
+}
+
+$('btnCam').addEventListener('click', async () => {
+  if (cameraRunning()) {
+    stopBoothCamera();
+    return;
+  }
+  await startBoothCamera();
 });
 
 $('btnCapture').addEventListener('click', async () => {
@@ -684,12 +690,8 @@ function stopCamTab() {
   $('camStatus').textContent = '';
 }
 
-$('btnCam2').addEventListener('click', async () => {
+async function startCamTab() {
   try {
-    if (camTabRunning) {
-      stopCamTab();
-      return;
-    }
     await startCamera($('cam2'), selectedCamId || undefined);
     await setFocusMode('continuous');
     camTabRunning = true;
@@ -709,8 +711,16 @@ $('btnCam2').addEventListener('click', async () => {
     camTabUI();
     $('camStatus').textContent = '';
   } catch (e) {
-    notify(`❌ Caméra : ${e.message}`);
+    notify(`❌ Caméra : ${e.message} — appuie sur « Démarrer la caméra ».`);
   }
+}
+
+$('btnCam2').addEventListener('click', async () => {
+  if (camTabRunning) {
+    stopCamTab();
+    return;
+  }
+  await startCamTab();
 });
 
 $('btnCamSwitch2').addEventListener('click', async () => {
