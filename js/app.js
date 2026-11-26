@@ -646,7 +646,7 @@ function updateCamSwitchLabel() {
   if (!b) return;
   const cam = cameras.find((c) => c.deviceId === selectedCamId);
   let txt = facingTextFor(cameraRunning() ? currentFacing() : null, (cam && cam.label) || '');
-  if (!txt && cameraRunning() && !selectedCamId) txt = 'Dos';
+  if (!txt && cameraRunning() && !selectedCamId) txt = 'Face';
   b.textContent = txt ? `🔄 ${txt}` : '🔄 Changer de caméra';
   applyMirror();
 }
@@ -668,7 +668,7 @@ function applyMirror() {
 
 async function startBoothCamera() {
   try {
-    await startCamera($('cam'), selectedCamId || undefined);
+    await startCamera($('cam'), selectedCamId || undefined, {}, 'user');
     await setFocusMode('continuous');
     await refreshCameras();
     updateCamSwitchLabel();
@@ -962,7 +962,7 @@ function camMedia() {
 
 async function startCamTab() {
   try {
-    await startCamera($('cam2'), selectedCamId || undefined, camMedia());
+    await startCamera($('cam2'), selectedCamId || undefined, camMedia(), 'environment');
     await setFocusMode('continuous');
     camTabRunning = true;
     await refreshCameras();

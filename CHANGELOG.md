@@ -3,6 +3,9 @@
 Historique de toutes les versions de **agodeo-web-printer**, de la plus récente à la plus ancienne.
 Ce fichier est mis à jour à chaque nouvelle version (le numéro affiché dans l'en-tête de l'app correspond à la dernière entrée).
 
+## [3.2.25] — 2026-11-26
+- **Caméra par défaut selon l'onglet** : 🎞️ **Photobooth → Face (`user`)** et 📷 **Photo → Dos (`environment`)** — `startCamera(video, deviceId, media, defaultFacing)` ; repli automatique sur l'autre caméra si absente (ex. PC sans caméra avant). Le libellé 🔁 du photobooth vaut « Face » par défaut quand le facing n'est pas rapporté par le navigateur. Le miroir selfie reste automatique (Face uniquement)
+
 ## [3.2.24] — 2026-11-26
 - **Menu Contenu** : la case « Dithering Floyd-Steinberg (photos) » est maintenant **sur la même ligne que son libellé** (`inline-flex`, coche centrée) ; et en **mode HD (mode 2)** elle est automatiquement **décochée et désactivée** (infobulle « 16 niveaux de gris réels, pas de tramage ») — `currentDither()` force `false` en mode 2, l'aperçu garde le tramage pour rester fidèle au rendu mono
 - **Fix régression v3.2.20** : les règles CSS `#view-printer` (mise en page épurée) n'étaient plus appliquées après le renommage → sélecteurs passés à `#view-admin`, et `#view-home` limité à 620 px centré comme Admin

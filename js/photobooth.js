@@ -2,20 +2,21 @@ import { PRINT_WIDTH } from './protocol.js';
 
 let stream = null;
 
-export async function startCamera(video, deviceId, media = {}) {
+export async function startCamera(video, deviceId, media = {}, defaultFacing = 'environment') {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     throw new Error('caméra indisponible : getUserMedia exige HTTPS ou localhost');
   }
+  const otherFacing = defaultFacing === 'user' ? 'environment' : 'user';
   const base = deviceId
     ? { deviceId: { exact: deviceId } }
-    : { facingMode: 'environment' };
+    : { facingMode: defaultFacing };
   const videoConstraints = Object.assign({ width: { ideal: 1280 }, height: { ideal: 720 } }, base, media);
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
   } catch (e) {
     if (!deviceId && /facing|notfound|overconstrained|notreadable/i.test(`${e.name} ${e.message}`)) {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: Object.assign({ facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, media),
+        video: Object.assign({ facingMode: otherFacing, width: { ideal: 1280 }, height: { ideal: 720 } }, media),
         audio: false,
       });
     } else {
